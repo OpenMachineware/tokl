@@ -1,10 +1,10 @@
 [package]
 name = "tokl"
 version = "0.1.1"
-edition = "2021"
+edition = "2024"
 description = "Command-line tool to count code lines and tokens (approximate/exact tokenization for multiple models)"
 license = "GPL-3.0"
-authors = ["tokl contributors"]
+authors = ["Jia Liu & tokl contributors"]
 
 [[bin]]
 name = "tokl"

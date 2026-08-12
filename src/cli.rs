@@ -193,7 +193,7 @@ pub const VERSION_INFO: &str = concat!(
     "tokl ",
     env!("CARGO_PKG_VERSION"),
     "\n",
-    "Counts code lines and tokens\n",
+    "Token and Lines Counter\n",
     "License: GPL-3.0\n",
     "Copyright (C) 2026 Jia Liu & tokl contributors"
 );
