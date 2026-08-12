@@ -1,6 +1,7 @@
 # tokl -- Token and Line Counter
 
 [![英文文档](https://img.shields.io/badge/English_Docs-Click_here-brightgreen?style=for-the-badge)](./README.md)
+[![Release](https://img.shields.io/github/v/release/OpenMachineware/tokl?sort=semver&style=for-the-badge)](https://github.com/OpenMachineware/tokl/releases)
 
 统计代码行数与 Token 数量的命令行工具。
 
@@ -17,7 +18,36 @@
   `language`（语言定义）、`count`（行数统计）、`tokenize`（分词器适配）、
   `format`（输出格式化）
 
-## 构建
+## 安装（下载预编译二进制）
+
+每个 [GitHub Release](https://github.com/OpenMachineware/tokl/releases) 都附带
+预编译二进制：推送 `v*` 标签时，GitHub Actions 会自动构建并上传。
+
+| 平台 | 文件名 |
+| --- | --- |
+| Linux（x86_64） | `tokl-<tag>-x86_64-unknown-linux-gnu` |
+| macOS（Apple Silicon） | `tokl-<tag>-aarch64-apple-darwin` |
+| Windows（x86_64） | `tokl-<tag>-x86_64-pc-windows-msvc.exe` |
+
+下载对应平台的版本后，加执行权限、改个名就能直接用，无需安装、无任何依赖：
+
+```bash
+# Linux / macOS（以 v0.1.0 为例）：
+curl -LO https://github.com/OpenMachineware/tokl/releases/download/v0.1.0/tokl-v0.1.0-x86_64-unknown-linux-gnu
+chmod +x tokl-v0.1.0-x86_64-unknown-linux-gnu
+mv tokl-v0.1.0-x86_64-unknown-linux-gnu tokl
+./tokl .
+```
+
+```powershell
+# Windows：把下载的 .exe 重命名后直接运行
+ren tokl-v0.1.0-x86_64-pc-windows-msvc.exe tokl.exe
+.\tokl.exe .
+```
+
+> 说明：macOS 目前只构建 Apple Silicon（aarch64）版本，Intel Mac 用户请从源码构建（见下）。
+
+## 从源码构建
 
 ```bash
 cargo build --release

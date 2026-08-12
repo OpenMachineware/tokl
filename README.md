@@ -1,6 +1,7 @@
 # tokl -- Token and Line Counter
 
 [![Chinese Docs](https://img.shields.io/badge/Chinese_Docs-Click_here-blue?style=for-the-badge)](./README_zh.md)
+[![Release](https://img.shields.io/github/v/release/OpenMachineware/tokl?sort=semver&style=for-the-badge)](https://github.com/OpenMachineware/tokl/releases)
 
 A command-line tool that counts code lines and tokens.
 
@@ -20,7 +21,39 @@ A command-line tool that counts code lines and tokens.
   `count` (line counting), `tokenize` (tokenizer adapter), `format`
   (output formatting)
 
-## Build
+## Install (pre-built binaries)
+
+Pre-built binaries are attached to every
+[GitHub Release](https://github.com/OpenMachineware/tokl/releases): GitHub
+Actions builds and uploads them automatically whenever a `v*` tag is pushed.
+
+| Platform | Asset name |
+| --- | --- |
+| Linux (x86_64) | `tokl-<tag>-x86_64-unknown-linux-gnu` |
+| macOS (Apple Silicon) | `tokl-<tag>-aarch64-apple-darwin` |
+| Windows (x86_64) | `tokl-<tag>-x86_64-pc-windows-msvc.exe` |
+
+Download the asset for your platform, then make it executable and rename it —
+that's all, no install step and no dependencies:
+
+```bash
+# Linux / macOS (example for release v0.1.0):
+curl -LO https://github.com/OpenMachineware/tokl/releases/download/v0.1.0/tokl-v0.1.0-x86_64-unknown-linux-gnu
+chmod +x tokl-v0.1.0-x86_64-unknown-linux-gnu
+mv tokl-v0.1.0-x86_64-unknown-linux-gnu tokl
+./tokl .
+```
+
+```powershell
+# Windows: rename the downloaded .exe and run it
+ren tokl-v0.1.0-x86_64-pc-windows-msvc.exe tokl.exe
+.\tokl.exe .
+```
+
+> Note: the macOS build currently targets Apple Silicon (aarch64). Intel Mac
+> users can build from source instead (see below).
+
+## Build from source
 
 ```bash
 cargo build --release
