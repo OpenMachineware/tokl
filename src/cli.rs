@@ -176,6 +176,12 @@ Configuration:
     default_format / default_ignore_dirs / default_ignore_langs /
     default_exts / tokenizer_dir.
 
+Version control:
+    When scanning inside a git/svn/hg/bzr/fossil repository, ignore rules
+    from the repository's ignore file (.gitignore / .svnignore /
+    .hgignore / .bzrignore / .ignore) are applied automatically and merged
+    with the -i ignores. Supports *, ?, [...], ** globs and ! negation.
+
 Examples:
     tokl .
     tokl -m deepseek-v4 -f markdown src tests

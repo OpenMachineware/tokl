@@ -206,6 +206,10 @@ default_format = "table"
 #   .venv, venv, .mypy_cache, .pytest_cache, .ruff_cache, .tox, .nox
 #   Generic: .git, .hg, .svn, build, out, coverage, .idea, .vscode,
 #   .terraform, .cache, .dart_tool, Pods
+# When scanning inside a git/svn/hg/bzr/fossil repository, the repository's
+# ignore file (.gitignore etc.) is also applied and merged with this list.
+# 当扫描路径位于 git/svn/hg/bzr/fossil 仓库内时，仓库的忽略文件
+# （.gitignore 等）也会自动生效，与本列表取并集。
 default_ignore_dirs = [
     "node_modules",
     "target",

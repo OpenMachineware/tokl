@@ -32,6 +32,7 @@ mod sp;
 mod tokenize;
 mod toml;
 mod util;
+mod vcs;
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -126,7 +127,36 @@ fn main() -> ExitCode {
             .collect()
     };
 
-    let scan_opts = ScanOptions { ignore_dirs, ignore_langs, only_exts: exts };
+    // Detect version control (git/svn/hg/...) and load repository ignore
+    // rules (.gitignore etc.); they are merged with -i / config ignores.
+    let vcs = vcs::VcsContext::detect(&opts.paths);
+    if opts.verbose {
+        if vcs.kinds.is_empty() {
+            eprintln!("[verbose] no version-control repository detected");
+        } else {
+            for (kind, root) in &vcs.repos {
+                eprintln!(
+                    "[verbose] vcs: {} repository at {}",
+                    kind.name(),
+                    root.display()
+                );
+            }
+            if vcs.rule_count > 0 {
+                eprintln!(
+                    "[verbose] vcs: applying {} ignore rule(s) from repo \
+                     ignore files",
+                    vcs.rule_count
+                );
+            }
+        }
+    }
+
+    let scan_opts = ScanOptions {
+        ignore_dirs,
+        ignore_langs,
+        only_exts: exts,
+        vcs: Some(vcs),
+    };
 
     // Build the tokenizer
     let tokenizer_dir = cfg.tokenizer_dir.as_deref().map(Path::new);

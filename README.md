@@ -117,7 +117,7 @@ tokl [OPTIONS] <PATH...>
 | `-v, --verbose` | Verbose output (tokenizer source, skipped files, etc.) |
 | `-m, --model <MODEL>` | Set the model (takes precedence over config) |
 | `-f, --format <json\|table\|markdown>` | Output format (takes precedence over config) |
-| `-i, --ignore <PATTERN>` | Ignore dirs/languages/extensions, repeatable; merged with `default_ignore_dirs` and `default_ignore_langs` |
+| `-i, --ignore <PATTERN>` | Ignore dirs/languages/extensions, repeatable; merged with `default_ignore_dirs`, `default_ignore_langs` and the repository's version-control ignore file |
 | `-e, --ext <EXT>` | Count only the given extensions, repeatable; merged with `default_exts` |
 | `-j, --jobs <N>` | Number of counting threads (default: number of CPU cores) |
 | `--init` | Generate a default config file (auto-created on first run) |
@@ -133,6 +133,26 @@ tokl -m qwen --verbose ~/projects/myapp
 tokl -e ui .          # count Qt .ui files (extensions of unregistered languages)
 tokl -j 8 .           # count with 8 parallel threads
 ```
+
+## Version control
+
+When the path you count is inside a **git / svn / hg / bzr / fossil**
+repository, tokl automatically applies the repository's ignore rules
+(`.gitignore`, `.svnignore`, `.hgignore`, `.bzrignore` or `.ignore`) on top
+of the `-i` / config ignores (the rules are merged — anything ignored by
+either side is skipped):
+
+```text
+# .gitignore:  *.log          → notes.log is skipped
+# -i build:                   → build/ is skipped
+# both:                       → the union of the two sets
+```
+
+The supported pattern syntax follows gitignore: `#` comments, `!` negation,
+trailing `/` for directories, `/`-anchored paths, and the `*` / `?` /
+`[...]` / `**` globs. Mercurial's `.hgignore` is honored for its
+`syntax: glob` rules only (its default regexp syntax is not implemented).
+Use `-v` to see which repository and how many rules were detected.
 
 ## Config file
 

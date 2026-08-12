@@ -82,9 +82,14 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
         }
         fc.lines += 1;
 
-        let mut seen_code = false;
+        // A line that is entirely blank still belongs to an open
+        // cross-line string / raw string / block comment:
+        //   - inside a string or raw string  -> counts as code
+        //   - inside a block comment         -> counts as comment
+        let mut seen_code =
+            in_string.is_some() || raw_hashes > 0 || raw_end.is_some();
         let mut seen_comment = block_depth > 0;
-        let mut has_nonblank = false;
+        let mut has_nonblank = seen_code || seen_comment;
         let mut pos = 0usize;
 
         while pos < line.len() {
@@ -358,7 +363,8 @@ fn raw_start_len(syntax: &LangSpec, line: &[u8], pos: usize) -> Option<usize> {
     }
 }
 
-/// Aggregate per-file counts (sorted by language name).
+/// Aggregate per-file counts, sorted by code lines descending
+/// (largest first), then by file count descending, then by language name.
 pub fn aggregate(
     files: impl IntoIterator<Item = (String, FileCount)>,
 ) -> Vec<(String, LangAgg)> {
@@ -372,7 +378,14 @@ pub fn aggregate(
         agg.code += fc.code;
         agg.tokens += fc.tokens;
     }
-    map.into_iter().collect()
+    let mut rows: Vec<(String, LangAgg)> = map.into_iter().collect();
+    rows.sort_by(|a, b| {
+        b.1.code
+            .cmp(&a.1.code)
+            .then_with(|| b.1.files.cmp(&a.1.files))
+            .then_with(|| a.0.cmp(&b.0))
+    });
+    rows
 }
 
 #[cfg(test)]
@@ -449,6 +462,35 @@ mod tests {
         let fc = count_file(code, &find_lang("cpp"), 0);
         assert_eq!(fc.comments, 0);
         assert_eq!(fc.code, 3);
+    }
+
+    #[test]
+    fn test_blank_line_inside_strings() {
+        // Rust raw string: blank lines inside count as code, not blank
+        let code = b"let s = r#\"\n\n\n\"#;\n";
+        let fc = count_file(code, &find_lang("rust"), 0);
+        assert_eq!(fc.lines, 4);
+        assert_eq!(fc.blanks, 0);
+        assert_eq!(fc.comments, 0);
+        assert_eq!(fc.code, 4);
+        // Python triple-quoted string: blank lines inside count as code
+        let code = b"s = \"\"\"\n\nx\n\"\"\"\n";
+        let fc = count_file(code, &find_lang("python"), 0);
+        assert_eq!(fc.lines, 4);
+        assert_eq!(fc.blanks, 0);
+        assert_eq!(fc.comments, 0);
+        assert_eq!(fc.code, 4);
+    }
+
+    #[test]
+    fn test_blank_line_inside_block_comment() {
+        // Blank lines inside a block comment count as comments
+        let code = b"/* a\n\nb */\n";
+        let fc = count_file(code, &find_lang("c"), 0);
+        assert_eq!(fc.lines, 3);
+        assert_eq!(fc.blanks, 0);
+        assert_eq!(fc.comments, 3);
+        assert_eq!(fc.code, 0);
     }
 
     #[test]

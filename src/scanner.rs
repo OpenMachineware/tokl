@@ -36,6 +36,8 @@ pub struct ScanOptions {
     pub ignore_langs: Vec<String>,
     /// Extensions to count only (-e merged with config; empty counts all)
     pub only_exts: Vec<String>,
+    /// Version-control ignore context (.gitignore etc.), when inside a repo.
+    pub vcs: Option<crate::vcs::VcsContext>,
 }
 
 /// A file to be counted.
@@ -227,6 +229,15 @@ pub fn scan(
                         if ignore_dirs.contains(&name.to_ascii_lowercase()) {
                             continue;
                         }
+                        if let Some(vcs) = &opts.vcs {
+                            // Prune ignored directories unless a negation
+                            // rule could re-include something below them.
+                            if vcs.should_skip(&path, true)
+                                && !vcs.has_negations
+                            {
+                                continue;
+                            }
+                        }
                         let canon = path
                             .canonicalize()
                             .unwrap_or_else(|_| path.clone());
@@ -273,6 +284,11 @@ fn push_file(
     let name = file_name_of(path);
     if ignore_dirs.contains(&name.to_ascii_lowercase()) {
         return;
+    }
+    if let Some(vcs) = &opts.vcs {
+        if vcs.should_skip(path, false) {
+            return;
+        }
     }
     let lang_idx = registry.match_lang(path);
     let ext = extension_of(path);

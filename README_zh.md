@@ -107,7 +107,7 @@ tokl [选项] <PATH...>
 | `-v, --verbose` | 详细输出（分词器来源、跳过文件等） |
 | `-m, --model <MODEL>` | 指定模型（优先级高于配置文件） |
 | `-f, --format <json\|table\|markdown>` | 输出格式（优先级高于配置文件） |
-| `-i, --ignore <PATTERN>` | 忽略目录/语言/后缀，可多次；与配置 `default_ignore_dirs`、`default_ignore_langs` 取并集 |
+| `-i, --ignore <PATTERN>` | 忽略目录/语言/后缀，可多次；与配置 `default_ignore_dirs`、`default_ignore_langs` 及版本控制忽略文件取并集 |
 | `-e, --ext <EXT>` | 只统计指定后缀，可多次；与配置 `default_exts` 取并集 |
 | `-j, --jobs <N>` | 计数线程数（默认：CPU 核心数） |
 | `--init` | 生成默认配置文件（首次运行会自动生成） |
@@ -123,6 +123,23 @@ tokl -m qwen --verbose ~/projects/myapp
 tokl -j 8 .                # 用 8 个线程并行统计
 tokl -e ui .          # 统计 Qt 的 .ui 文件（未注册语言的扩展名）
 ```
+
+## 版本控制
+
+当统计路径位于 **git / svn / hg / bzr / fossil** 仓库内时，tokl 会自动读取
+仓库的忽略文件（`.gitignore`、`.svnignore`、`.hgignore`、`.bzrignore` 或
+`.ignore`），并与 `-i` / 配置中的忽略规则**取并集**——任何一方忽略都会被跳过：
+
+```text
+# .gitignore:  *.log          → notes.log 被跳过
+# -i build:                   → build/ 被跳过
+# 两者取并集：                → 两侧规则都生效
+```
+
+支持的匹配语法与 gitignore 一致：`#` 注释、`!` 取反、结尾 `/` 表示目录、
+含 `/` 的模式相对仓库根锚定匹配，以及 `*` / `?` / `[...]` / `**` 通配符。
+Mercurial 的 `.hgignore` 仅支持其 `syntax: glob` 规则（默认的正则语法未实现）。
+用 `-v` 可查看检测到的仓库与规则数量。
 
 ## 配置文件
 
