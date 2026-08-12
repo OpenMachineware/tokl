@@ -53,6 +53,50 @@ ren tokl-v0.1.0-x86_64-pc-windows-msvc.exe tokl.exe
 > Note: the macOS build currently targets Apple Silicon (aarch64). Intel Mac
 > users can build from source instead (see below).
 
+## Security warning
+
+The pre-built binaries are **not code-signed** (no Apple Developer ID or
+Microsoft Authenticode certificate; both require paid developer accounts).
+Because of that, macOS and Windows may show a security warning the first time
+you run them. This is normal for open-source binaries downloaded from GitHub
+Releases — the warning does **not** mean the file is malicious.
+
+To be safe, always download from the official
+[Releases](https://github.com/OpenMachineware/tokl/releases) page and check
+that the asset name matches the release tag you expect.
+
+### macOS (Gatekeeper)
+
+The first run may show: *"tokl" cannot be opened because the developer cannot
+be verified.*
+
+- **Option A** — right-click (or Ctrl-click) the file in Finder, choose
+  **Open**, then click **Open** in the dialog that appears.
+- **Option B** — remove the quarantine flag in Terminal, then run:
+
+  ```bash
+  xattr -d com.apple.quarantine tokl
+  ./tokl .
+  ```
+
+  (If the command reports `No such xattr`, the file has no quarantine flag —
+  just run it.)
+
+### Windows (SmartScreen)
+
+The first run may show: *Windows protected your PC.*
+
+- **Option A** — right-click the `.exe`, choose **Properties**, tick
+  **Unblock** at the bottom, click **OK**, then run it as usual.
+- **Option B** — in the warning dialog click **More info**, then **Run
+  anyway**.
+
+  In PowerShell you can also unblock it programmatically:
+
+  ```powershell
+  Unblock-File .\tokl.exe
+  ```
+
 ## Build from source
 
 ```bash

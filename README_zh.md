@@ -47,6 +47,46 @@ ren tokl-v0.1.0-x86_64-pc-windows-msvc.exe tokl.exe
 
 > 说明：macOS 目前只构建 Apple Silicon（aarch64）版本，Intel Mac 用户请从源码构建（见下）。
 
+## 安全警告
+
+预编译二进制**未做代码签名**（没有 Apple Developer ID 或 Microsoft
+Authenticode 证书——两者都需要付费的开发者账号）。因此 macOS 和 Windows
+首次运行时都可能弹出安全警告。开源软件从 GitHub Releases 下载的二进制出现
+这种情况很正常——**出现警告不代表文件有恶意**。
+
+为安全起见，请始终从官方
+[Releases](https://github.com/OpenMachineware/tokl/releases) 页面下载，
+并核对文件名与发布版本号一致。
+
+### macOS（Gatekeeper）
+
+首次运行可能提示：*无法打开“tokl”，因为无法验证开发者。*
+
+- **方式一**：在 Finder 中右键（或按住 Control 点击）该文件，选择**打开**，
+  在弹出的对话框中再次点击**打开**。
+- **方式二**：在终端中清除隔离属性后再运行：
+
+  ```bash
+  xattr -d com.apple.quarantine tokl
+  ./tokl .
+  ```
+
+  （若提示 `No such xattr`，说明文件没有隔离属性，直接运行即可。）
+
+### Windows（SmartScreen）
+
+首次运行可能提示：*Windows 已保护你的电脑。*
+
+- **方式一**：右键 `.exe` 文件 → **属性**，勾选底部的**解除锁定**，点击**确定**，
+  然后正常运行。
+- **方式二**：在警告弹窗中点击**更多信息**，再点击**仍要运行**。
+
+  也可以在 PowerShell 中编程式解除锁定：
+
+  ```powershell
+  Unblock-File .\tokl.exe
+  ```
+
 ## 从源码构建
 
 ```bash
