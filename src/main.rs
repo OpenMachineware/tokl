@@ -84,7 +84,7 @@ fn main() -> ExitCode {
         .model
         .clone()
         .or(cfg.default_model.clone())
-        .unwrap_or_else(|| "deepseek-v3".to_string());
+        .unwrap_or_else(|| "deepseek-v4".to_string());
     let model = match tokenize::resolve_model(&model_name) {
         Some(m) => m,
         None => {
@@ -277,20 +277,15 @@ fn main() -> ExitCode {
 
 /// --init: generate a default config file.
 fn init_config() -> ExitCode {
-    let Some(dir) = config::config_dir() else {
+    let Some(path) = config::config_file_path() else {
         eprintln!("error: cannot determine config directory");
         return ExitCode::from(1);
     };
-    let path = dir.join("user_config.toml");
     if path.exists() {
         eprintln!("config file already exists: {}", path.display());
         return ExitCode::from(1);
     }
-    if let Err(e) = std::fs::create_dir_all(&dir) {
-        eprintln!("error: cannot create directory {}: {}", dir.display(), e);
-        return ExitCode::from(1);
-    }
-    if let Err(e) = std::fs::write(&path, config::DEFAULT_CONFIG_TEMPLATE) {
+    if let Err(e) = config::write_default_config(&path) {
         eprintln!("error: cannot write {}: {}", path.display(), e);
         return ExitCode::from(1);
     }

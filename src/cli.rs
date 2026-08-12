@@ -34,6 +34,7 @@
 //!   -e, --ext <EXT>          only count given extensions
 //!                            (repeatable, merged with config)
 //!   --init                   generate a default config file in the config dir
+//!                            (the config file is auto-generated on first run)
 //!   <PATH>                   paths to scan (multiple allowed, recursive)
 
 #[derive(Debug, Clone, Default)]
@@ -155,7 +156,7 @@ Options:
     -m, --model <MODEL>      Model, one of:
                              chatgpt claude gemini grok deepseek glm kimi
                              qwen seed yuanbao llama mistral
-                             (aliases allowed, e.g. gpt-4o / deepseek-v3)
+                             (aliases allowed, e.g. gpt-5.6 / deepseek-v4)
     -f, --format <FMT>       Output format: json | table | markdown
     -i, --ignore <PATTERN>   Ignore dirs/languages/extensions
                              (repeatable; merged with config)
@@ -164,17 +165,20 @@ Options:
     -j, --jobs <N>           Number of counting threads
                              (default: number of CPU cores)
     --init                   Write default user_config.toml to config dir
+                             (created automatically on first run)
     <PATH>                   Paths to scan (multiple allowed, recursive)
 
 Configuration:
     Default config file: ~/.config/tokl/user_config.toml
-    (%APPDATA%\tokl\user_config.toml on Windows). It can set
-    default_model / default_format / default_ignore_dirs /
-    default_ignore_langs / default_exts / tokenizer_dir.
+    (%APPDATA%\tokl\user_config.toml on Windows). It is generated
+    automatically on first run (defaults: deepseek-v4, table output,
+    common build/dependency dirs ignored). Keys: default_model /
+    default_format / default_ignore_dirs / default_ignore_langs /
+    default_exts / tokenizer_dir.
 
 Examples:
     tokl .
-    tokl -m deepseek-v3 -f markdown src tests
+    tokl -m deepseek-v4 -f markdown src tests
     tokl -i node_modules -i target -e rs -e py .
     tokl -m qwen --verbose ~/projects/myapp
 "#;

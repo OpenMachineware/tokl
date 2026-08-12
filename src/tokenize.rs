@@ -18,20 +18,23 @@
 //
 //! Token counting: model -> tokenizer engine adapter layer.
 //!
-//! Supported models and their tokenizer types (research findings):
+//! Supported models and their tokenizer types (research findings, 2026-08):
 //! - chatgpt  : Byte-level BPE (tiktoken, o200k/cl100k), vocab from
-//!              tiktoken cache or local files
-//! - claude   : proprietary BPE (not open source), approximate by default
-//! - gemini   : SentencePiece (based on Gemma vocab)
-//! - grok     : SentencePiece (Grok-1 ships open tokenizer.model)
-//! - deepseek : Byte-level BPE (128K vocab, tokenizer.json is public)
-//! - glm      : BPE (GLM-4 tokenizer.json is public)
-//! - kimi     : SentencePiece (Kimi K2 ships open kimi-spm)
-//! - qwen     : Byte-level BPE (qwen.tiktoken)
-//! - seed     : ByteDance proprietary (approximate)
-//! - yuanbao  : SentencePiece (Hunyuan)
-//! - llama    : BPE (Llama 3 uses tiktoken style); `llama2` is SentencePiece
-//! - mistral  : SentencePiece (byte fallback)
+//!              tiktoken cache or local files; GPT-5.2/5.4/5.5/5.6 (2026)
+//! - claude   : proprietary BPE (not open source), approximate by default;
+//!              Claude 4.8 and Claude 5 (Fable/Mythos/Opus 5, 2026)
+//! - gemini   : SentencePiece (based on Gemma vocab); Gemini 3 / 3.5 (2026)
+//! - grok     : SentencePiece (Grok-1 ships open tokenizer.model);
+//!              Grok 4 / 4.1 / 4.3 / 4.6 (2026)
+//! - deepseek : Byte-level BPE (128K vocab, tokenizer.json is public);
+//!              DeepSeek V4 (2026-04, Pro/Flash), the default model
+//! - glm      : BPE (GLM tokenizer.json is public); GLM-5 / 5.1 / 5.2 (2026)
+//! - kimi     : SentencePiece (Kimi K2 ships open kimi-spm); Kimi K3 (2026-07)
+//! - qwen     : Byte-level BPE (qwen.tiktoken); Qwen3.5 (2026)
+//! - seed     : ByteDance proprietary (approximate); Doubao Seed 2.0 (2026-02)
+//! - yuanbao  : SentencePiece (Hunyuan); Hunyuan TurboS/T1, Hy3 (2026-07)
+//! - llama    : BPE (Llama 3/4 uses tiktoken style); `llama2` is SentencePiece
+//! - mistral  : SentencePiece (byte fallback); Mistral 3 series (2026)
 //!
 //! Use the exact engine when a local vocab is available; otherwise fall
 //! back to the approximate engine (-v prints a hint).
@@ -67,11 +70,18 @@ pub const MODELS: &[ModelInfo] = &[
             "gpt-4o",
             "gpt-4.1",
             "gpt-5",
+            "gpt-5.2",
+            "gpt-5.4",
+            "gpt-5.5",
+            "gpt-5.6",
             "gpt-3.5",
             "o1",
             "o3",
             "gpt-oss",
             "gpt-oss-120b",
+            "sol",
+            "terra",
+            "luna",
         ],
         engine: EngineKind::Bpe,
         vocab_files: &[
@@ -88,16 +98,32 @@ pub const MODELS: &[ModelInfo] = &[
             "claude-3.5",
             "claude-3.7",
             "claude-4",
+            "claude-4.8",
+            "claude-5",
             "claude-sonnet",
+            "claude-sonnet-5",
             "claude-opus",
+            "claude-opus-5",
             "claude-haiku",
+            "claude-fable-5",
+            "claude-mythos-5",
+            "fable",
+            "mythos",
         ],
         engine: EngineKind::Bpe,
         vocab_files: &["claude.tokenizer.json"],
     },
     ModelInfo {
         name: "gemini",
-        aliases: &["google", "gemma", "gemini-1.5", "gemini-2.0", "gemini-2.5"],
+        aliases: &[
+            "google",
+            "gemma",
+            "gemini-1.5",
+            "gemini-2.0",
+            "gemini-2.5",
+            "gemini-3",
+            "gemini-3.5",
+        ],
         engine: EngineKind::SentencePiece,
         vocab_files: &[
             "gemma_tokenizer.model",
@@ -107,7 +133,10 @@ pub const MODELS: &[ModelInfo] = &[
     },
     ModelInfo {
         name: "grok",
-        aliases: &["xai", "grok-1", "grok-2", "grok-3"],
+        aliases: &[
+            "xai", "grok-1", "grok-2", "grok-3", "grok-4", "grok-4.1",
+            "grok-4.3", "grok-4.6",
+        ],
         engine: EngineKind::SentencePiece,
         vocab_files: &["grok.tokenizer.model", "tokenizer.model"],
     },
@@ -117,6 +146,9 @@ pub const MODELS: &[ModelInfo] = &[
             "deepseek-v3",
             "deepseek-v3.1",
             "deepseek-v3.2",
+            "deepseek-v4",
+            "deepseek-v4-pro",
+            "deepseek-v4-flash",
             "deepseek-v2",
             "deepseek-coder",
             "deepseek-r1",
@@ -124,6 +156,7 @@ pub const MODELS: &[ModelInfo] = &[
         ],
         engine: EngineKind::Bpe,
         vocab_files: &[
+            "deepseek_v4.tokenizer.json",
             "deepseek_v3.tokenizer.json",
             "deepseek.tokenizer.json",
             "deepseek_v3.tiktoken",
@@ -131,17 +164,33 @@ pub const MODELS: &[ModelInfo] = &[
     },
     ModelInfo {
         name: "glm",
-        aliases: &["glm-4", "glm-4.5", "glm-4.6", "glm4", "zhipu", "chatglm"],
+        aliases: &[
+            "glm-4", "glm-4.5", "glm-4.6", "glm-4.7", "glm-5", "glm-5.1",
+            "glm-5.2", "glm4", "zhipu", "chatglm",
+        ],
         engine: EngineKind::Bpe,
-        vocab_files: &["glm-4.tokenizer.json", "glm.tokenizer.json"],
+        vocab_files: &[
+            "glm-5.tokenizer.json",
+            "glm-4.tokenizer.json",
+            "glm.tokenizer.json",
+        ],
     },
     ModelInfo {
         name: "kimi",
-        aliases: &["moonshot", "moonshotai", "kimi-k2", "kimi-k1.5", "k2"],
+        aliases: &[
+            "moonshot",
+            "moonshotai",
+            "kimi-k2",
+            "kimi-k1.5",
+            "k2",
+            "kimi-k3",
+            "k3",
+        ],
         engine: EngineKind::SentencePiece,
         vocab_files: &[
-            "kimi.tokenizer.model",
+            "kimi-k3.tokenizer.model",
             "kimi-k2.tokenizer.model",
+            "kimi.tokenizer.model",
             "tokenizer.model",
         ],
     },
@@ -153,6 +202,8 @@ pub const MODELS: &[ModelInfo] = &[
             "qwen2",
             "qwen2.5",
             "qwen3",
+            "qwen3.5",
+            "qwen3.5-omni",
             "qwq",
         ],
         engine: EngineKind::Bpe,
@@ -167,7 +218,10 @@ pub const MODELS: &[ModelInfo] = &[
         aliases: &[
             "doubao",
             "seed-1.6",
+            "seed-2.0",
+            "seed-2.0-code",
             "doubao-seed",
+            "doubao-seed-2.0",
             "seed-coder",
             "bytedance",
         ],
@@ -176,7 +230,14 @@ pub const MODELS: &[ModelInfo] = &[
     },
     ModelInfo {
         name: "yuanbao",
-        aliases: &["hunyuan", "yuanbao", "tencent"],
+        aliases: &[
+            "hunyuan",
+            "yuanbao",
+            "hunyuan-turbos",
+            "hunyuan-t1",
+            "hy3",
+            "tencent",
+        ],
         engine: EngineKind::SentencePiece,
         vocab_files: &["hunyuan.tokenizer.model", "yuanbao.tokenizer.model"],
     },
@@ -188,6 +249,10 @@ pub const MODELS: &[ModelInfo] = &[
             "llama-3.1",
             "llama-3.2",
             "llama-3.3",
+            "llama-4",
+            "llama-4.1",
+            "scout",
+            "maverick",
             "meta",
             "llama3.1",
         ],
@@ -210,8 +275,14 @@ pub const MODELS: &[ModelInfo] = &[
             "mistral-7b",
             "mistral-8x7b",
             "mixtral",
+            "mistral-3",
             "mistral-large",
+            "mistral-large-3",
             "mistral-small",
+            "mistral-small-3",
+            "mistral-small-4",
+            "mistral-medium",
+            "mistral-medium-3.5",
             "codestral",
         ],
         engine: EngineKind::SentencePiece,
@@ -343,8 +414,22 @@ mod tests {
     fn test_resolve() {
         assert!(resolve_model("qwen").is_some());
         assert!(resolve_model("deepseek-v3").is_some());
+        assert!(resolve_model("deepseek-v4").is_some());
+        assert!(resolve_model("deepseek-v4-pro").is_some());
         assert!(resolve_model("gpt-4o").is_some());
+        assert!(resolve_model("gpt-5.6").is_some());
+        assert!(resolve_model("sol").is_some());
         assert!(resolve_model("claude-sonnet").is_some());
+        assert!(resolve_model("claude-5").is_some());
+        assert!(resolve_model("gemini-3.5").is_some());
+        assert!(resolve_model("grok-4.6").is_some());
+        assert!(resolve_model("glm-5.2").is_some());
+        assert!(resolve_model("kimi-k3").is_some());
+        assert!(resolve_model("qwen3.5").is_some());
+        assert!(resolve_model("seed-2.0").is_some());
+        assert!(resolve_model("hy3").is_some());
+        assert!(resolve_model("llama-4.1").is_some());
+        assert!(resolve_model("mistral-3").is_some());
         assert!(resolve_model("LLAMA3").is_some());
         assert!(resolve_model("nonexistent").is_none());
         // "llama2" must not resolve to "llama"

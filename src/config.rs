@@ -20,7 +20,7 @@
 //! or %APPDATA%\tokl\user_config.toml (Windows).
 
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::toml::MiniToml;
 
@@ -35,21 +35,23 @@ pub struct Config {
     pub tokenizer_dir: Option<String>,
 }
 
-/// Return the config file path, if it exists.
-pub fn config_path() -> Option<PathBuf> {
+/// Resolve the config file path, whether or not the file exists yet.
+///
+/// Priority: `TOKL_CONFIG` environment variable, then the platform config
+/// directory (`~/.config/tokl/user_config.toml` on Linux/macOS,
+/// `%APPDATA%\tokl\user_config.toml` on Windows).
+pub fn config_file_path() -> Option<PathBuf> {
     if let Ok(p) = env::var("TOKL_CONFIG") {
-        let p = PathBuf::from(p);
-        if p.is_file() {
-            return Some(p);
+        if !p.is_empty() {
+            return Some(PathBuf::from(p));
         }
     }
-    let dir = config_dir()?;
-    let p = dir.join("user_config.toml");
-    if p.is_file() {
-        Some(p)
-    } else {
-        None
-    }
+    config_dir().map(|d| d.join("user_config.toml"))
+}
+
+/// Return the config file path, if it exists.
+pub fn config_path() -> Option<PathBuf> {
+    config_file_path().filter(|p| p.is_file())
 }
 
 /// The directory holding the config file (may not exist).
@@ -74,9 +76,48 @@ pub fn config_dir() -> Option<PathBuf> {
     None
 }
 
+/// Write the default config template to `path`, creating parent directories.
+pub fn write_default_config(path: &Path) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)?;
+        }
+    }
+    std::fs::write(path, DEFAULT_CONFIG_TEMPLATE)
+}
+
+/// First-run bootstrap: create the default config file when missing.
+///
+/// Best effort only - a failure is reported as a warning and never aborts
+/// the run (built-in defaults are used instead). Returns the path when a
+/// new file was written.
+pub fn ensure_default_config() -> Option<PathBuf> {
+    let path = config_file_path()?;
+    if path.is_file() {
+        return None;
+    }
+    match write_default_config(&path) {
+        Ok(()) => Some(path),
+        Err(e) => {
+            eprintln!(
+                "[warning] cannot create default config file {}: {}",
+                path.display(),
+                e
+            );
+            None
+        }
+    }
+}
+
 /// Load config; return the default (empty) config if the file is missing.
+///
+/// On first run (no config file yet) a default config file is generated
+/// automatically so the user can find and tweak it.
 pub fn load() -> Config {
     let mut cfg = Config::default();
+    if let Some(path) = ensure_default_config() {
+        eprintln!("generated default config file: {}", path.display());
+    }
     let Some(path) = config_path() else {
         return cfg;
     };
@@ -116,31 +157,67 @@ pub fn load() -> Config {
     cfg
 }
 
-/// Default config file contents (reference output for --init).
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_template_parses() {
+        let toml = MiniToml::parse(DEFAULT_CONFIG_TEMPLATE).unwrap();
+        assert_eq!(toml.get_str("default_model").unwrap(), "deepseek-v4");
+        assert_eq!(toml.get_str("default_format").unwrap(), "table");
+        let dirs = toml.get_str_array("default_ignore_dirs").unwrap();
+        assert!(dirs.contains(&"node_modules".to_string()));
+        assert!(dirs.contains(&".dart_tool".to_string()));
+        let langs = toml.get_str_array("default_ignore_langs").unwrap();
+        assert!(langs.contains(&"svg".to_string()));
+        assert!(toml.get_str_array("default_exts").unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_config_file_path_prefers_env() {
+        // TOKL_CONFIG wins even if the file does not exist yet
+        unsafe {
+            std::env::set_var("TOKL_CONFIG", "/nonexistent/tokl/config.toml");
+        }
+        let p = config_file_path().unwrap();
+        assert_eq!(p, PathBuf::from("/nonexistent/tokl/config.toml"));
+        unsafe { std::env::remove_var("TOKL_CONFIG") };
+    }
+}
+
+/// Default config file contents (written on first run and by --init).
 pub const DEFAULT_CONFIG_TEMPLATE: &str = r#"# tokl user configuration
-# Default LLM used (the -m flag takes precedence)
-default_model = "deepseek-v3"
+#
+# This file is generated automatically on first run. You can edit it and
+# the changes will take effect the next time tokl starts.
+
+# Default LLM used for token counting (the -m flag takes precedence).
+# A domestic LLM is the default: DeepSeek V4 (Byte-level BPE, 128K vocab).
+default_model = "deepseek-v4"
 
 # Default output format (maps to -f; supports table, json, markdown)
 default_format = "table"
 
-# Default directories to ignore (maps to -i, ignores directories)
-default_ignore_dirs = [
-    "node_modules",
-    "target",
-    ".git",
-    "dist",
-    "__pycache__",
-]
+# Default directories to ignore (maps to -i; matched by exact directory
+# name, case-insensitively). Covers common dependency/build/cache dirs:
+#   JS/TS: node_modules, dist, .next, .nuxt, vendor
+#   Rust:  target        Java: .gradle        Python: __pycache__,
+#   .venv, venv, .mypy_cache, .pytest_cache, .ruff_cache, .tox, .nox
+#   Generic: .git, .hg, .svn, build, out, coverage, .idea, .vscode,
+#   .terraform, .cache, .dart_tool, Pods
+# NOTE: arrays must stay on one line (the built-in parser is line-based).
+default_ignore_dirs = ["node_modules", "target", ".git", ".hg", ".svn", "dist", "build", "out", "coverage", "__pycache__", ".venv", "venv", ".idea", ".vscode", ".next", ".nuxt", "vendor", "Pods", ".gradle", ".terraform", ".cache", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", ".nox", ".dart_tool"]
 
-# Default languages to ignore (maps to -i; filtered by extension or language name)
-default_ignore_langs = [
-    "svg",
-    "lock",
-]
+# Default languages to ignore (maps to -i; filtered by extension or
+# language name): svg images, lockfiles and source maps are rarely of
+# interest when counting code.
+default_ignore_langs = ["svg", "lock", "map"]
 
-# Default extensions to count only (maps to -e; empty or unset counts all)
-default_exts = ["rs", "py", "cpp"]
+# Default extensions to count only (maps to -e).
+# Empty counts all file types; set it, e.g. ["rs", "py", "js"], if you
+# usually want to restrict counting to specific languages.
+default_exts = []
 
 # Optional: tokenizer vocab directory. Put each model's vocab files here
 # (tokenizer.json / tokenizer.model / *.tiktoken) to get exact token counts;

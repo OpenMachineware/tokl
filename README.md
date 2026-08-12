@@ -8,7 +8,11 @@ A command-line tool that counts code lines and tokens.
   syntax (comment / string markers), in a style similar to
   [scc](https://github.com/boyter/scc)
 - Token counting: tokenize for 13 mainstream LLMs (ChatGPT / Claude / Gemini /
-  Grok / DeepSeek / GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral)
+  Grok / DeepSeek / GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral),
+  with aliases tracking the latest releases (DeepSeek V4, GPT-5.6, Claude 5,
+  Gemini 3.5, Grok 4.6, GLM-5.2, Kimi K3, Qwen3.5, ...)
+- A config file (`~/.config/tokl/user_config.toml`) is generated automatically
+  on first run, with defaults for most developers (default model: DeepSeek V4)
 - Pure Rust standard library, no third-party dependencies, single-binary
   distribution (macOS / Linux / Windows)
 - Parallel counting across all CPU cores by default, tunable with `-j`
@@ -40,14 +44,14 @@ tokl [OPTIONS] <PATH...>
 | `-i, --ignore <PATTERN>` | Ignore dirs/languages/extensions, repeatable; merged with `default_ignore_dirs` and `default_ignore_langs` |
 | `-e, --ext <EXT>` | Count only the given extensions, repeatable; merged with `default_exts` |
 | `-j, --jobs <N>` | Number of counting threads (default: number of CPU cores) |
-| `--init` | Generate a default config file |
+| `--init` | Generate a default config file (auto-created on first run) |
 | `<PATH>` | Paths to count, multiple allowed, recursive |
 
 Examples:
 
 ```bash
 tokl .
-tokl -m deepseek-v3 -f markdown src tests
+tokl -m deepseek-v4 -f markdown src tests
 tokl -i node_modules -i target -e rs -e py .
 tokl -m qwen --verbose ~/projects/myapp
 tokl -e ui .          # count Qt .ui files (extensions of unregistered languages)
@@ -57,29 +61,39 @@ tokl -j 8 .           # count with 8 parallel threads
 ## Config file
 
 Default location `~/.config/tokl/user_config.toml`
-(`%APPDATA%\tokl\user_config.toml` on Windows); generate it with `--init`,
-or point to another path via the `TOKL_CONFIG` environment variable:
+(`%APPDATA%\tokl\user_config.toml` on Windows). **The file is generated
+automatically on first run**, so nothing needs to be configured before first
+use; you can also create it explicitly with `--init`, or point to another
+path via the `TOKL_CONFIG` environment variable.
+
+The generated defaults fit most developer workflows: the default model is
+**DeepSeek V4** (a domestic LLM), common build/dependency/cache directories
+are ignored, and all file types are counted:
 
 ```toml
-# Default LLM used (the -m flag takes precedence)
-default_model = "deepseek-v3"
+# Default LLM used (the -m flag takes precedence).
+# A domestic LLM is the default: DeepSeek V4 (Byte-level BPE, 128K vocab).
+default_model = "deepseek-v4"
 
 # Default output format (maps to -f; supports table, json, markdown)
 default_format = "table"
 
-# Default directories to ignore (maps to -i, ignores directories)
-default_ignore_dirs = ["node_modules", "target", ".git", "dist", "__pycache__"]
+# Default directories to ignore (maps to -i, matched by directory name)
+default_ignore_dirs = ["node_modules", "target", ".git", ".hg", ".svn", "dist", "build", "out", "coverage", "__pycache__", ".venv", "venv", ".idea", ".vscode", ".next", ".nuxt", "vendor", "Pods", ".gradle", ".terraform", ".cache", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", ".nox", ".dart_tool"]
 
 # Default languages to ignore (maps to -i; filtered by extension or language name)
-default_ignore_langs = ["svg", "lock"]
+default_ignore_langs = ["svg", "lock", "map"]
 
-# Default extensions to count only (maps to -e; empty or unset counts all)
-default_exts = ["rs", "py", "cpp"]
+# Default extensions to count only (maps to -e; empty counts all types)
+default_exts = []
 
 # Optional: tokenizer vocab directory; exact token counting is enabled
 # once each model's vocab files are placed here
 # tokenizer_dir = "/path/to/vocabs"
 ```
+
+Note: the built-in TOML parser is line-based, so arrays must stay on a
+single line in this file.
 
 ## Models and tokenizers
 
@@ -88,19 +102,19 @@ Each model's tokenization algorithm falls into one of two families:
 
 | Model | Aliases | Tokenizer type | Vocab source |
 | --- | --- | --- | --- |
-| `chatgpt` | `gpt-4o` `gpt-5` `o1` `o3`, etc. | Byte-level BPE | tiktoken `o200k_base` / `cl100k_base` |
-| `claude` | `claude-3` `claude-sonnet`, etc. | BPE (not open source) | no public vocab, approximate by default |
-| `gemini` | `gemma`, etc. | SentencePiece | based on Gemma vocab (`gemma_tokenizer.model`) |
-| `grok` | `grok-1` `xai`, etc. | SentencePiece | open `tokenizer.model` from Grok-1 |
-| `deepseek` | `deepseek-v3` `deepseek-coder`, etc. | Byte-level BPE | 128K vocab (`deepseek_v3.tokenizer.json`) |
-| `glm` | `glm-4` `zhipu`, etc. | BPE | GLM-4 `tokenizer.json` |
-| `kimi` | `kimi-k2` `moonshot`, etc. | SentencePiece | open `tokenizer.model` from Kimi K2 |
-| `qwen` | `qwen2.5` `qwen3`, etc. | Byte-level BPE | `qwen.tiktoken` |
-| `seed` | `doubao`, etc. | BPE (proprietary) | no public vocab, approximate by default |
-| `yuanbao` | `hunyuan`, etc. | SentencePiece | Hunyuan `tokenizer.model` |
-| `llama` | `llama3` `meta`, etc. | Byte-level BPE | Llama 3 `llama3.tiktoken` |
+| `chatgpt` | `gpt-5.6` `gpt-5.5` `gpt-5.2` `gpt-4o` `gpt-5` `sol` `terra` `luna` `o1` `o3`, etc. | Byte-level BPE | tiktoken `o200k_base` / `cl100k_base` |
+| `claude` | `claude-5` `claude-opus-5` `claude-fable-5` `claude-mythos-5` `claude-4.8` `claude-4` `claude-sonnet`, etc. | BPE (not open source) | no public vocab, approximate by default |
+| `gemini` | `gemini-3.5` `gemini-3` `gemma`, etc. | SentencePiece | based on Gemma vocab (`gemma_tokenizer.model`) |
+| `grok` | `grok-4.6` `grok-4.3` `grok-4.1` `grok-4` `grok-1` `xai`, etc. | SentencePiece | open `tokenizer.model` from Grok-1 |
+| `deepseek` | `deepseek-v4` `deepseek-v4-pro` `deepseek-v4-flash` `deepseek-v3` `deepseek-coder`, etc. | Byte-level BPE | 128K vocab (`deepseek_v4.tokenizer.json`) |
+| `glm` | `glm-5.2` `glm-5` `glm-4.7` `glm-4` `zhipu`, etc. | BPE | GLM `tokenizer.json` |
+| `kimi` | `kimi-k3` `kimi-k2` `moonshot`, etc. | SentencePiece | open `tokenizer.model` from Kimi K2/K3 |
+| `qwen` | `qwen3.5` `qwen3.5-omni` `qwen3` `qwen2.5`, etc. | Byte-level BPE | `qwen.tiktoken` |
+| `seed` | `seed-2.0` `doubao-seed-2.0` `doubao`, etc. | BPE (proprietary) | no public vocab, approximate by default |
+| `yuanbao` | `hunyuan` `hunyuan-turbos` `hunyuan-t1` `hy3`, etc. | SentencePiece | Hunyuan `tokenizer.model` |
+| `llama` | `llama-4.1` `llama-4` `scout` `maverick` `llama3` `meta`, etc. | Byte-level BPE | Llama 3/4 `llama3.tiktoken` |
 | `llama2` | `llama-2`, etc. | SentencePiece | Llama 2 `tokenizer.model` |
-| `mistral` | `mixtral`, etc. | SentencePiece | Mistral `tokenizer.model` |
+| `mistral` | `mistral-3` `mistral-medium-3.5` `mistral-small-4` `mixtral`, etc. | SentencePiece | Mistral `tokenizer.model` |
 
 ### Exact vs approximate
 
@@ -116,9 +130,9 @@ Each model's tokenization algorithm falls into one of two families:
   (e.g. `/tmp/data-gym-cache/o200k_base.tiktoken`).
 
 Vocab files can be downloaded from the corresponding HuggingFace model repos
-(e.g. `deepseek-ai/DeepSeek-V3`, `zai-org/glm-4-9b`, `Qwen/Qwen2.5`,
-`mistralai/Mistral-7B-v0.1`, `xai-org/grok-1`, `moonshotai/Kimi-K2`); use `-v`
-to see which tokenizer source is actually in use.
+(e.g. `deepseek-ai/DeepSeek-V4-Pro-Base`, `zai-org/glm-5`, `Qwen/Qwen3.5`,
+`xai-org/grok-1`, `moonshotai/Kimi-K2`); use `-v` to see which tokenizer
+source is actually in use.
 
 ## Language support
 
