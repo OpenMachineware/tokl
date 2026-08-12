@@ -38,6 +38,7 @@ tokl [OPTIONS] <PATH...>
 | `-f, --format <json\|table\|markdown>` | Output format (takes precedence over config) |
 | `-i, --ignore <PATTERN>` | Ignore dirs/languages/extensions, repeatable; merged with `default_ignore_dirs` and `default_ignore_langs` |
 | `-e, --ext <EXT>` | Count only the given extensions, repeatable; merged with `default_exts` |
+| `-j, --jobs <N>` | Number of counting threads (default: number of CPU cores) |
 | `--init` | Generate a default config file |
 | `<PATH>` | Paths to count, multiple allowed, recursive |
 

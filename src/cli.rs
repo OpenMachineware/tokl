@@ -27,6 +27,8 @@
 //!   -v, --verbose            verbose output (e.g. approximate tokenizer hints)
 //!   -m, --model <MODEL>      set the model (takes precedence over config)
 //!   -f, --format <FMT>       output format: json | table | markdown
+//!   -j, --jobs <N>           number of counting threads
+//!                            (default: number of CPU cores)
 //!   -i, --ignore <PATTERN>   ignore dirs/languages/extensions
 //!                            (repeatable, merged with config)
 //!   -e, --ext <EXT>          only count given extensions
@@ -39,6 +41,7 @@ pub struct Options {
     pub verbose: bool,
     pub model: Option<String>,
     pub format: Option<String>,
+    pub jobs: Option<usize>,
     pub ignore: Vec<String>,
     pub exts: Vec<String>,
     pub paths: Vec<String>,
@@ -87,6 +90,18 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
                 })?;
                 opts.exts.push(v.clone());
             }
+            "-j" | "--jobs" => {
+                let v = it.next().ok_or_else(|| {
+                    format!("option {} requires an argument", arg)
+                })?;
+                let n: usize = v
+                    .parse()
+                    .map_err(|_| format!("invalid thread count: {}", v))?;
+                if n == 0 {
+                    return Err("thread count must be >= 1".to_string());
+                }
+                opts.jobs = Some(n);
+            }
             _ => {
                 // Support the --model=value form
                 if let Some((key, val)) = arg.split_once('=') {
@@ -97,6 +112,17 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
                         }
                         "-i" | "--ignore" => opts.ignore.push(val.to_string()),
                         "-e" | "--ext" => opts.exts.push(val.to_string()),
+                        "-j" | "--jobs" => {
+                            let n: usize = val.parse().map_err(|_| {
+                                format!("invalid thread count: {}", val)
+                            })?;
+                            if n == 0 {
+                                return Err(
+                                    "thread count must be >= 1".to_string()
+                                );
+                            }
+                            opts.jobs = Some(n);
+                        }
                         _ => return Err(format!("unknown option: {}", arg)),
                     }
                 } else {
@@ -135,6 +161,8 @@ Options:
                              (repeatable; merged with config)
     -e, --ext <EXT>          Count only given extensions, e.g. -e ui
                              (repeatable; merged with config)
+    -j, --jobs <N>           Number of counting threads
+                             (default: number of CPU cores)
     --init                   Write default user_config.toml to config dir
     <PATH>                   Paths to scan (multiple allowed, recursive)
 
@@ -183,6 +211,16 @@ mod tests {
         let o = parse_args(&["--model=qwen", "-i=node_modules", "."]).unwrap();
         assert_eq!(o.model.as_deref(), Some("qwen"));
         assert_eq!(o.ignore, vec!["node_modules"]);
+    }
+
+    #[test]
+    fn test_jobs() {
+        let o = parse_args(&["-j", "8", "."]).unwrap();
+        assert_eq!(o.jobs, Some(8));
+        let o = parse_args(&["--jobs=4", "."]).unwrap();
+        assert_eq!(o.jobs, Some(4));
+        assert!(parse_args(&["-j", "0", "."]).is_err());
+        assert!(parse_args(&["-j", "abc", "."]).is_err());
     }
 
     #[test]

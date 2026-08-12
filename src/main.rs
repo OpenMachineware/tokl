@@ -33,8 +33,10 @@ mod tokenize;
 mod toml;
 mod util;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::{mpsc, Mutex};
+use std::thread;
 
 use cli::{USAGE, VERSION_INFO};
 use count::LangAgg;
@@ -150,26 +152,73 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    // Count file by file
+    // Count files in parallel
+    enum WorkResult {
+        Counted(String, count::FileCount),
+        SkippedBinary(PathBuf),
+    }
+
+    let n_threads = opts.jobs.unwrap_or_else(|| {
+        thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
+    });
+    if opts.verbose {
+        eprintln!("[verbose] counting with {} thread(s)", n_threads);
+    }
+
     let mut file_counts = Vec::with_capacity(files.len());
     let mut binary_skipped = 0u64;
-    for f in &files {
-        let Ok(data) = std::fs::read(&f.path) else {
-            continue;
-        };
-        if util::looks_binary(&data) {
-            binary_skipped += 1;
-            if opts.verbose {
-                eprintln!(
-                    "[verbose] skipped binary file: {}",
-                    f.path.display()
-                );
+    {
+        let work = Mutex::new(files.iter());
+        let (tx, rx) = mpsc::channel::<WorkResult>();
+        thread::scope(|s| {
+            for _ in 0..n_threads {
+                let work = &work;
+                let tx = tx.clone();
+                let tokenizer = &tokenizer;
+                s.spawn(move || loop {
+                    let Some(f) = work.lock().unwrap().next() else {
+                        break;
+                    };
+                    let Ok(data) = std::fs::read(&f.path) else {
+                        continue;
+                    };
+                    if util::looks_binary(&data) {
+                        if tx
+                            .send(WorkResult::SkippedBinary(f.path.clone()))
+                            .is_err()
+                        {
+                            break;
+                        }
+                        continue;
+                    }
+                    let tokens = tokenizer.count(&data);
+                    let fc = count::count_file(&data, &f.syntax, tokens);
+                    if tx
+                        .send(WorkResult::Counted(f.lang_name.clone(), fc))
+                        .is_err()
+                    {
+                        break;
+                    }
+                });
             }
-            continue;
-        }
-        let tokens = tokenizer.count(&data);
-        let fc = count::count_file(&data, &f.syntax, tokens);
-        file_counts.push((f.lang_name.clone(), fc));
+            drop(tx);
+            for r in rx {
+                match r {
+                    WorkResult::Counted(lang, fc) => {
+                        file_counts.push((lang, fc));
+                    }
+                    WorkResult::SkippedBinary(p) => {
+                        binary_skipped += 1;
+                        if opts.verbose {
+                            eprintln!(
+                                "[verbose] skipped binary file: {}",
+                                p.display()
+                            );
+                        }
+                    }
+                }
+            }
+        });
     }
 
     if opts.verbose {
