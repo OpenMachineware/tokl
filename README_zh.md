@@ -4,8 +4,7 @@
 
 统计代码行数与 Token 数量的命令行工具。
 
-- 行数统计：按语言语法（注释 / 字符串标记）区分 **Code / Comments / Blanks**，
-  风格与 [scc](https://github.com/boyter/scc) 类似
+- 行数统计：按语言语法（注释 / 字符串标记）区分 **Code / Comments / Blanks**
 - Token 统计：为 13 类主流大模型（ChatGPT / Claude / Gemini / Grok / DeepSeek /
   GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral）提供分词计数，
   别名跟踪最新版本（DeepSeek V4、GPT-5.6、Claude 5、Gemini 3.5、Grok 4.6、
@@ -72,11 +71,43 @@ default_model = "deepseek-v4"
 # 默认的输出格式（对应 -f 参数，支持 table, json, markdown）
 default_format = "table"
 
-# 默认忽略的目录（对应 -i 参数，按目录名匹配）
-default_ignore_dirs = ["node_modules", "target", ".git", ".hg", ".svn", "dist", "build", "out", "coverage", "__pycache__", ".venv", "venv", ".idea", ".vscode", ".next", ".nuxt", "vendor", "Pods", ".gradle", ".terraform", ".cache", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", ".nox", ".dart_tool"]
+# 默认忽略的目录（对应 -i 参数，按目录名匹配）；数组支持跨行书写
+default_ignore_dirs = [
+    "node_modules",
+    "target",
+    ".git",
+    ".hg",
+    ".svn",
+    "dist",
+    "build",
+    "out",
+    "coverage",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".idea",
+    ".vscode",
+    ".next",
+    ".nuxt",
+    "vendor",
+    "Pods",
+    ".gradle",
+    ".terraform",
+    ".cache",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".nox",
+    ".dart_tool",
+]
 
 # 默认忽略的语言（对应 -i 参数，按后缀或语言名过滤）
-default_ignore_langs = ["svg", "lock", "map"]
+default_ignore_langs = [
+    "svg",
+    "lock",
+    "map",
+]
 
 # 默认只统计的后缀（对应 -e 参数，留空表示统计所有类型）
 default_exts = []
@@ -85,7 +116,7 @@ default_exts = []
 # tokenizer_dir = "/path/to/vocabs"
 ```
 
-注意：内置 TOML 解析器按行解析，数组需写在同一行内。
+数组支持跨行书写（如上例所示），也支持常规的单行写法。
 
 ## 模型与分词器
 
@@ -133,19 +164,19 @@ LaTeX, Texinfo, GCC MD（`.md`，优先级低于 Markdown）, LLVM TableGen（`.
 ## 输出示例
 
 ```
-Language            Files       Lines    Blanks  Comments       Code    Tokens
-──────────────────────────────────────────────────────────────────────────────
-Rust                  183      51,131     4,789     6,636     39,706  165,642
-Markdown               35       6,238     1,545         0      4,693    9,124
-SystemVerilog           6          92         8        42         42      701
-TOML                    2          42         8         0         34       91
-──────────────────────────────────────────────────────────────────────────────
-Total                 226      57,503     6,350     6,678     44,475  175,558
-──────────────────────────────────────────────────────────────────────────────
+Language        Files    Tokens    Lines   Blanks   Comments     Code
+─────────────────────────────────────────────────────────────────────
+Rust              183   165,642   51,131    4,789      6,636   39,706
+Markdown           35     9,124    6,238    1,545          0    4,693
+SystemVerilog       6       701       92        8         42       42
+TOML                2        91       42        8          0       34
+─────────────────────────────────────────────────────────────────────
+Total             226   175,558   57,503    6,350      6,678   44,475
+─────────────────────────────────────────────────────────────────────
 ```
 
-列顺序为 `Language Files Tokens Lines Blanks Comments Code`（在 scc 基础上
-去掉 Complexity 列，并在 Files 与 Lines 之间插入 Tokens 列）。
+列顺序为 `Language Files Tokens Lines Blanks Comments Code`（Tokens 位于
+Files 与 Lines 之间）。
 
 ## 许可证
 

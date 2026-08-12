@@ -18,8 +18,8 @@
 //
 //! Minimal TOML parser - only the subset used by tokl config files:
 //! top-level key-value pairs: `key = "string"`, `key = ["a", "b", ...]`,
-//! `key = true/false`, `key = 123`. Supports `#` comments and blank lines.
-//! No inline tables / nested tables.
+//! `key = true/false`, `key = 123`. Supports `#` comments, blank lines and
+//! multi-line arrays (each item on its own line). No inline / nested tables.
 
 #[derive(Debug, Clone, Default)]
 pub struct MiniToml {
@@ -37,12 +37,25 @@ pub enum TomlValue {
 impl MiniToml {
     pub fn parse(text: &str) -> Result<MiniToml, String> {
         let mut entries = Vec::new();
+        // A multi-line array still being collected: (key, accumulated text).
+        let mut pending: Option<(String, String)> = None;
         for (lineno, raw) in text.lines().enumerate() {
-            let line = strip_comment(raw).trim();
+            let line = strip_comment(raw).trim().to_string();
+            if let Some((_, acc)) = pending.as_mut() {
+                if !line.is_empty() {
+                    acc.push('\n');
+                    acc.push_str(&line);
+                }
+                if array_is_closed(acc) {
+                    let (key, acc) = pending.take().unwrap();
+                    let value = parse_value(&acc, lineno + 1)?;
+                    entries.push((key, value));
+                }
+                continue;
+            }
             if line.is_empty() {
                 continue;
             }
-            // Ignore type errors for unknown keys, but record errors
             let eq = line.find('=').ok_or_else(|| {
                 format!("line {}: missing '=': {}", lineno + 1, raw.trim())
             })?;
@@ -54,8 +67,16 @@ impl MiniToml {
                     lineno + 1
                 ));
             }
+            if val.starts_with('[') && !array_is_closed(val) {
+                // Start of a multi-line array; keep collecting following lines.
+                pending = Some((key.to_string(), val.to_string()));
+                continue;
+            }
             let value = parse_value(val, lineno + 1)?;
             entries.push((key.to_string(), value));
+        }
+        if let Some((key, _)) = pending {
+            return Err(format!("array for key '{}' is missing ']'", key));
         }
         Ok(MiniToml { entries })
     }
@@ -96,6 +117,29 @@ fn strip_comment(line: &str) -> &str {
         }
     }
     line
+}
+
+/// Return true when the text contains a closing `]` outside of a quoted string.
+fn array_is_closed(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    let mut in_str = false;
+    let mut escape = false;
+    for &b in bytes {
+        if in_str {
+            if escape {
+                escape = false;
+            } else if b == b'\\' {
+                escape = true;
+            } else if b == b'"' {
+                in_str = false;
+            }
+        } else if b == b'"' {
+            in_str = true;
+        } else if b == b']' {
+            return true;
+        }
+    }
+    false
 }
 
 fn parse_value(raw: &str, lineno: usize) -> Result<TomlValue, String> {
@@ -186,5 +230,69 @@ default_exts = ["rs", "py"]
             toml.get_str_array("default_ignore_dirs").unwrap(),
             vec!["node_modules", "target"]
         );
+    }
+
+    #[test]
+    fn test_multiline_array() {
+        let toml = MiniToml::parse(
+            r#"
+default_ignore_dirs = [
+    "node_modules",
+    "target",
+    ".git",
+]
+default_ignore_langs = [
+    "svg",
+    "lock",
+]
+default_exts = []
+"#,
+        )
+        .unwrap();
+        assert_eq!(
+            toml.get_str_array("default_ignore_dirs").unwrap(),
+            vec!["node_modules", "target", ".git"]
+        );
+        assert_eq!(
+            toml.get_str_array("default_ignore_langs").unwrap(),
+            vec!["svg", "lock"]
+        );
+        assert!(toml.get_str_array("default_exts").unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_multiline_array_with_inline_comments() {
+        let toml = MiniToml::parse(
+            r#"
+default_ignore_dirs = [
+    "node_modules", # JS/TS deps
+    "target",       # Rust build output
+]
+"#,
+        )
+        .unwrap();
+        assert_eq!(
+            toml.get_str_array("default_ignore_dirs").unwrap(),
+            vec!["node_modules", "target"]
+        );
+    }
+
+    #[test]
+    fn test_multiline_array_unclosed() {
+        let err = MiniToml::parse(
+            r#"
+default_ignore_dirs = [
+    "node_modules",
+"#,
+        )
+        .unwrap_err();
+        assert!(err.contains("missing ']'"), "unexpected error: {}", err);
+    }
+
+    #[test]
+    fn test_string_value_with_brackets() {
+        // A `]` inside a string must not terminate an array
+        let toml = MiniToml::parse("note = [\"a]b\", \"c\"]").unwrap();
+        assert_eq!(toml.get_str_array("note").unwrap(), vec!["a]b", "c"]);
     }
 }

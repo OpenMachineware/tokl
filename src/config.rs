@@ -206,13 +206,44 @@ default_format = "table"
 #   .venv, venv, .mypy_cache, .pytest_cache, .ruff_cache, .tox, .nox
 #   Generic: .git, .hg, .svn, build, out, coverage, .idea, .vscode,
 #   .terraform, .cache, .dart_tool, Pods
-# NOTE: arrays must stay on one line (the built-in parser is line-based).
-default_ignore_dirs = ["node_modules", "target", ".git", ".hg", ".svn", "dist", "build", "out", "coverage", "__pycache__", ".venv", "venv", ".idea", ".vscode", ".next", ".nuxt", "vendor", "Pods", ".gradle", ".terraform", ".cache", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", ".nox", ".dart_tool"]
+default_ignore_dirs = [
+    "node_modules",
+    "target",
+    ".git",
+    ".hg",
+    ".svn",
+    "dist",
+    "build",
+    "out",
+    "coverage",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".idea",
+    ".vscode",
+    ".next",
+    ".nuxt",
+    "vendor",
+    "Pods",
+    ".gradle",
+    ".terraform",
+    ".cache",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".nox",
+    ".dart_tool",
+]
 
 # Default languages to ignore (maps to -i; filtered by extension or
 # language name): svg images, lockfiles and source maps are rarely of
 # interest when counting code.
-default_ignore_langs = ["svg", "lock", "map"]
+default_ignore_langs = [
+    "svg",
+    "lock",
+    "map",
+]
 
 # Default extensions to count only (maps to -e).
 # Empty counts all file types; set it, e.g. ["rs", "py", "js"], if you
