@@ -9,6 +9,7 @@
 - Token 统计：为 13 类主流大模型（ChatGPT / Claude / Gemini / Grok / DeepSeek /
   GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral）提供分词计数
 - 纯 Rust 标准库实现，无第三方依赖，单二进制分发（macOS / Linux / Windows）
+- 多线程并行统计，默认使用全部 CPU 核心，可用 `-j` 调整线程数
 - 模块化设计：`cli`（参数解析）、`config`（配置加载）、`scanner`（文件扫描）、
   `language`（语言定义）、`count`（行数统计）、`tokenize`（分词器适配）、
   `format`（输出格式化）
@@ -35,6 +36,7 @@ tokl [选项] <PATH...>
 | `-f, --format <json\|table\|markdown>` | 输出格式（优先级高于配置文件） |
 | `-i, --ignore <PATTERN>` | 忽略目录/语言/后缀，可多次；与配置 `default_ignore_dirs`、`default_ignore_langs` 取并集 |
 | `-e, --ext <EXT>` | 只统计指定后缀，可多次；与配置 `default_exts` 取并集 |
+| `-j, --jobs <N>` | 计数线程数（默认：CPU 核心数） |
 | `--init` | 生成默认配置文件 |
 | `<PATH>` | 要统计的路径，可多个，自动递归 |
 
@@ -45,6 +47,7 @@ tokl .
 tokl -m deepseek-v3 -f markdown src tests
 tokl -i node_modules -i target -e rs -e py .
 tokl -m qwen --verbose ~/projects/myapp
+tokl -j 8 .                # 用 8 个线程并行统计
 tokl -e ui .          # 统计 Qt 的 .ui 文件（未注册语言的扩展名）
 ```
 

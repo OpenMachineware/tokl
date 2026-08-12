@@ -11,6 +11,7 @@ A command-line tool that counts code lines and tokens.
   Grok / DeepSeek / GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral)
 - Pure Rust standard library, no third-party dependencies, single-binary
   distribution (macOS / Linux / Windows)
+- Parallel counting across all CPU cores by default, tunable with `-j`
 - Modular design: `cli` (argument parsing), `config` (config loading),
   `scanner` (file scanning), `language` (language definitions),
   `count` (line counting), `tokenize` (tokenizer adapter), `format`
@@ -50,6 +51,7 @@ tokl -m deepseek-v3 -f markdown src tests
 tokl -i node_modules -i target -e rs -e py .
 tokl -m qwen --verbose ~/projects/myapp
 tokl -e ui .          # count Qt .ui files (extensions of unregistered languages)
+tokl -j 8 .           # count with 8 parallel threads
 ```
 
 ## Config file

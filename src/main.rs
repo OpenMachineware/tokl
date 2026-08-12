@@ -159,61 +159,92 @@ fn main() -> ExitCode {
     }
 
     let n_threads = opts.jobs.unwrap_or_else(|| {
-        thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
+        let cores =
+            thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+        // Fewer files than cores: no point spawning a thread per file
+        cores.min(files.len().max(1))
     });
     if opts.verbose {
         eprintln!("[verbose] counting with {} thread(s)", n_threads);
     }
 
+    // Each worker accumulates results locally and ships them in batches,
+    // so the channel carries O(threads) messages instead of O(files).
+    const BATCH: usize = 256;
     let mut file_counts = Vec::with_capacity(files.len());
     let mut binary_skipped = 0u64;
     {
         let work = Mutex::new(files.iter());
-        let (tx, rx) = mpsc::channel::<WorkResult>();
+        let (tx, rx) = mpsc::channel::<Vec<WorkResult>>();
         thread::scope(|s| {
             for _ in 0..n_threads {
                 let work = &work;
                 let tx = tx.clone();
                 let tokenizer = &tokenizer;
-                s.spawn(move || loop {
-                    let Some(f) = work.lock().unwrap().next() else {
-                        break;
-                    };
-                    let Ok(data) = std::fs::read(&f.path) else {
-                        continue;
-                    };
-                    if util::looks_binary(&data) {
-                        if tx
-                            .send(WorkResult::SkippedBinary(f.path.clone()))
-                            .is_err()
-                        {
+                s.spawn(move || {
+                    let mut batch = Vec::with_capacity(BATCH);
+                    loop {
+                        let Some(f) = work.lock().unwrap().next() else {
                             break;
+                        };
+                        // Read only the first 8KB for the binary sniff; a
+                        // binary file never needs to be fully read.
+                        let mut file = match std::fs::File::open(&f.path) {
+                            Ok(f) => f,
+                            Err(_) => continue,
+                        };
+                        use std::io::Read;
+                        let mut head = [0u8; 8192];
+                        let Ok(n) = file.read(&mut head) else {
+                            continue;
+                        };
+                        if util::looks_binary(&head[..n]) {
+                            batch.push(WorkResult::SkippedBinary(
+                                f.path.clone(),
+                            ));
+                            if batch.len() >= BATCH {
+                                if tx.send(std::mem::take(&mut batch)).is_err()
+                                {
+                                    return;
+                                }
+                            }
+                            continue;
                         }
-                        continue;
+                        let mut data = Vec::with_capacity(n);
+                        data.extend_from_slice(&head[..n]);
+                        if file.read_to_end(&mut data).is_err() {
+                            continue;
+                        }
+                        let tokens = tokenizer.count(&data);
+                        let fc = count::count_file(&data, &f.syntax, tokens);
+                        batch
+                            .push(WorkResult::Counted(f.lang_name.clone(), fc));
+                        if batch.len() >= BATCH {
+                            if tx.send(std::mem::take(&mut batch)).is_err() {
+                                return;
+                            }
+                        }
                     }
-                    let tokens = tokenizer.count(&data);
-                    let fc = count::count_file(&data, &f.syntax, tokens);
-                    if tx
-                        .send(WorkResult::Counted(f.lang_name.clone(), fc))
-                        .is_err()
-                    {
-                        break;
+                    if !batch.is_empty() {
+                        let _ = tx.send(batch);
                     }
                 });
             }
             drop(tx);
-            for r in rx {
-                match r {
-                    WorkResult::Counted(lang, fc) => {
-                        file_counts.push((lang, fc));
-                    }
-                    WorkResult::SkippedBinary(p) => {
-                        binary_skipped += 1;
-                        if opts.verbose {
-                            eprintln!(
-                                "[verbose] skipped binary file: {}",
-                                p.display()
-                            );
+            for batch in rx {
+                for r in batch {
+                    match r {
+                        WorkResult::Counted(lang, fc) => {
+                            file_counts.push((lang, fc));
+                        }
+                        WorkResult::SkippedBinary(p) => {
+                            binary_skipped += 1;
+                            if opts.verbose {
+                                eprintln!(
+                                    "[verbose] skipped binary file: {}",
+                                    p.display()
+                                );
+                            }
                         }
                     }
                 }
