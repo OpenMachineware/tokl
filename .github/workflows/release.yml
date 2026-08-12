@@ -13,13 +13,10 @@ jobs:
     strategy:
       matrix:
         include:
-          # Ubuntu x86_64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          # Mac ARM (Apple Silicon)
           - os: macos-latest
             target: aarch64-apple-darwin
-          # Windows x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
 
@@ -36,9 +33,21 @@ jobs:
       - name: Build binary
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: Rename binary (Linux/Mac)
+        if: runner.os != 'Windows'
+        run: |
+          mv target/${{ matrix.target }}/release/tokl tokl-${{ github.ref_name }}-${{ matrix.target }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mv target/${{ matrix.target }}/release/tokl.exe tokl-${{ github.ref_name }}-${{ matrix.target }}.exe
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: target/${{ matrix.target }}/release/tokl*
+          files: |
+            tokl-${{ github.ref_name }}-${{ matrix.target }}
+            tokl-${{ github.ref_name }}-${{ matrix.target }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
