@@ -1,6 +1,6 @@
 [package]
 name = "tokl"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Command-line tool to count code lines and tokens (approximate/exact tokenization for multiple models)"
 license = "GPL-3.0"

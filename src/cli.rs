@@ -195,7 +195,7 @@ pub const VERSION_INFO: &str = concat!(
     "\n",
     "Counts code lines and tokens\n",
     "License: GPL-3.0\n",
-    "Copyright (C) 2026 tokl contributors"
+    "Copyright (C) 2026 Jia Liu & tokl contributors"
 );
 
 #[cfg(test)]
