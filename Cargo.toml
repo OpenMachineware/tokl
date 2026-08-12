@@ -1,0 +1,16 @@
+[package]
+name = "tokl"
+version = "0.1.0"
+edition = "2021"
+description = "Command-line tool to count code lines and tokens (approximate/exact tokenization for multiple models)"
+license = "GPL-3.0"
+authors = ["tokl contributors"]
+
+[[bin]]
+name = "tokl"
+path = "src/main.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
