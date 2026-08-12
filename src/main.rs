@@ -33,6 +33,7 @@ mod tokenize;
 mod toml;
 mod util;
 
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::{mpsc, Mutex};
@@ -183,6 +184,9 @@ fn main() -> ExitCode {
                 let tokenizer = &tokenizer;
                 s.spawn(move || {
                     let mut batch = Vec::with_capacity(BATCH);
+                    // Reuse the read buffer across files so small files do
+                    // not cause an allocation each time.
+                    let mut data = Vec::new();
                     loop {
                         let Some(f) = work.lock().unwrap().next() else {
                             break;
@@ -193,7 +197,6 @@ fn main() -> ExitCode {
                             Ok(f) => f,
                             Err(_) => continue,
                         };
-                        use std::io::Read;
                         let mut head = [0u8; 8192];
                         let Ok(n) = file.read(&mut head) else {
                             continue;
@@ -210,7 +213,7 @@ fn main() -> ExitCode {
                             }
                             continue;
                         }
-                        let mut data = Vec::with_capacity(n);
+                        data.clear();
                         data.extend_from_slice(&head[..n]);
                         if file.read_to_end(&mut data).is_err() {
                             continue;

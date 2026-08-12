@@ -26,18 +26,19 @@ use std::collections::{BinaryHeap, HashMap};
 use std::path::Path;
 
 use crate::json::Value;
-use crate::util::base64_decode;
+use crate::util::{base64_decode, FastBuildHasher};
 
 pub struct BpeTokenizer {
     /// token bytes -> rank (lower merges first; 0-255 are single bytes)
-    ranks: HashMap<Vec<u8>, u32>,
+    ranks: HashMap<Vec<u8>, u32, FastBuildHasher>,
 }
 
 impl BpeTokenizer {
     /// Load from a .tiktoken file (each line: base64 token + rank).
     pub fn from_tiktoken_file(path: &Path) -> Option<BpeTokenizer> {
         let text = std::fs::read_to_string(path).ok()?;
-        let mut ranks = HashMap::new();
+        let mut ranks: HashMap<Vec<u8>, u32, FastBuildHasher> =
+            HashMap::with_hasher(FastBuildHasher);
         for line in text.lines() {
             let line = line.trim();
             if line.is_empty() {
@@ -69,7 +70,8 @@ impl BpeTokenizer {
         let Value::Obj(fields) = vocab else {
             return None;
         };
-        let mut ranks = HashMap::new();
+        let mut ranks: HashMap<Vec<u8>, u32, FastBuildHasher> =
+            HashMap::with_hasher(FastBuildHasher);
         for (tok, id) in fields {
             let id = id.as_num()? as u32;
             ranks.insert(tok.as_bytes().to_vec(), id);
@@ -158,14 +160,14 @@ mod tests {
 
     #[test]
     fn test_empty() {
-        let t = BpeTokenizer { ranks: HashMap::new() };
+        let t = BpeTokenizer { ranks: HashMap::default() };
         assert_eq!(t.count(b""), 0);
     }
 
     #[test]
     fn test_simple_vocab() {
         // Tiny vocab: single bytes + "ab" + "cd"
-        let mut ranks = HashMap::new();
+        let mut ranks = HashMap::default();
         for b in 0u8..=255 {
             ranks.insert(vec![b], b as u32);
         }

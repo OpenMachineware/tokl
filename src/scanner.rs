@@ -19,8 +19,10 @@
 //! File scanning: recursively walk directories, filter by language table /
 //! extension, and return the list of files to count.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use std::thread;
 
 use crate::language::{LangSpec, LANGUAGES};
 use crate::util::{extension_of, file_name_of};
@@ -161,35 +163,58 @@ pub fn scan(
         opts.only_exts.iter().map(|s| s.to_ascii_lowercase()).collect();
     let only = !only_exts.is_empty();
 
-    let mut files = Vec::new();
+    let files: Mutex<Vec<ScannedFile>> = Mutex::new(Vec::new());
+    // Directories still to visit: (canonical path, display path)
+    let dirs: Mutex<VecDeque<(PathBuf, PathBuf)>> = Mutex::new(VecDeque::new());
     // Track visited canonical paths to prevent symlink loops
-    let mut visited: HashSet<PathBuf> = HashSet::new();
+    let visited: Mutex<HashSet<PathBuf>> = Mutex::new(HashSet::new());
 
     for root in roots {
         let root = Path::new(root);
         let root_canon =
             root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
-        if !visited.insert(root_canon.clone()) {
+        if !visited.lock().unwrap().insert(root_canon.clone()) {
             continue;
         }
         if root.is_file() {
+            let mut f = files.lock().unwrap();
             push_file(
                 root,
-                &root_canon,
-                &mut files,
-                &opts,
-                &registry,
+                &mut f,
+                opts,
+                registry,
                 &ignore_dirs,
                 &only_exts,
                 only,
             );
         } else if root.is_dir() {
-            let mut stack = vec![(root_canon, root.to_path_buf())];
-            while let Some((_canon, disp)) = stack.pop() {
+            dirs.lock().unwrap().push_back((root_canon, root.to_path_buf()));
+        }
+    }
+
+    // Walk directories in parallel: each thread drains the shared queue.
+    let n_threads =
+        thread::available_parallelism().map(|n| n.get()).unwrap_or(2).max(1);
+    thread::scope(|s| {
+        for _ in 0..n_threads {
+            let files = &files;
+            let dirs = &dirs;
+            let visited = &visited;
+            // Re-bind Copy references so the `move` closure captures
+            // references instead of the owned sets.
+            let ignore_dirs = &ignore_dirs;
+            let only_exts = &only_exts;
+            let opts = opts;
+            let registry = registry;
+            s.spawn(move || loop {
+                let (_canon, disp) = match dirs.lock().unwrap().pop_front() {
+                    Some(d) => d,
+                    None => return,
+                };
                 let Ok(entries) = std::fs::read_dir(&disp) else {
                     continue;
                 };
-                let mut dirs = Vec::new();
+                let mut subdirs = Vec::new();
                 for entry in entries.flatten() {
                     let path = entry.path();
                     let ftype = match entry.file_type() {
@@ -205,31 +230,32 @@ pub fn scan(
                         let canon = path
                             .canonicalize()
                             .unwrap_or_else(|_| path.clone());
-                        if visited.insert(canon.clone()) {
-                            dirs.push((canon, path));
+                        if visited.lock().unwrap().insert(canon.clone()) {
+                            subdirs.push((canon, path));
                         }
                     } else if ftype.is_file() || ftype.is_symlink() {
-                        let canon = path
-                            .canonicalize()
-                            .unwrap_or_else(|_| path.clone());
+                        let mut f = files.lock().unwrap();
                         push_file(
                             &path,
-                            &canon,
-                            &mut files,
-                            &opts,
-                            &registry,
+                            &mut f,
+                            opts,
+                            registry,
                             &ignore_dirs,
                             &only_exts,
                             only,
                         );
                     }
                 }
-                // Process subdirectories later
-                stack.extend(dirs.into_iter().rev());
-            }
+                // Process subdirectories later (LIFO keeps the old DFS order)
+                let mut d = dirs.lock().unwrap();
+                for sd in subdirs.into_iter().rev() {
+                    d.push_front(sd);
+                }
+            });
         }
-    }
+    });
 
+    let mut files = files.into_inner().unwrap();
     files.sort_by(|a, b| a.path.cmp(&b.path));
     files
 }
@@ -237,7 +263,6 @@ pub fn scan(
 #[allow(clippy::too_many_arguments)]
 fn push_file(
     path: &Path,
-    canon: &Path,
     files: &mut Vec<ScannedFile>,
     opts: &ScanOptions,
     registry: &Registry,
@@ -245,7 +270,6 @@ fn push_file(
     only_exts: &HashSet<String>,
     only: bool,
 ) {
-    let _ = canon;
     let name = file_name_of(path);
     if ignore_dirs.contains(&name.to_ascii_lowercase()) {
         return;

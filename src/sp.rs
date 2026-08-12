@@ -27,14 +27,15 @@
 use std::collections::HashMap;
 
 use crate::proto::{SP_BYTE, SP_NORMAL, SP_UNKNOWN};
+use crate::util::FastBuildHasher;
 
 const U2581: &[u8] = &[0xEF, 0x96, 0x81]; // UTF-8 encoding of ▁
 
 pub struct SpTokenizer {
     /// piece bytes -> score
-    lookup: HashMap<Vec<u8>, f32>,
+    lookup: HashMap<Vec<u8>, f32, FastBuildHasher>,
     /// <0xXX> byte piece table
-    byte_lookup: HashMap<u8, f32>,
+    byte_lookup: HashMap<u8, f32, FastBuildHasher>,
     unk_score: Option<f32>,
     max_len: usize,
 }
@@ -43,8 +44,10 @@ impl SpTokenizer {
     /// Build from the raw bytes of a tokenizer.model.
     pub fn from_model_bytes(data: &[u8]) -> Option<SpTokenizer> {
         let pieces = crate::proto::parse_model(data).ok()?;
-        let mut lookup: HashMap<Vec<u8>, f32> = HashMap::new();
-        let mut byte_lookup: HashMap<u8, f32> = HashMap::new();
+        let mut lookup: HashMap<Vec<u8>, f32, FastBuildHasher> =
+            HashMap::with_hasher(FastBuildHasher);
+        let mut byte_lookup: HashMap<u8, f32, FastBuildHasher> =
+            HashMap::with_hasher(FastBuildHasher);
         let mut unk_score = None;
         let mut max_len = 1usize;
         for p in pieces {

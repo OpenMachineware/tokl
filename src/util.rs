@@ -73,6 +73,38 @@ pub fn looks_binary(data: &[u8]) -> bool {
     data[..limit].contains(&0)
 }
 
+/// A fast, non-cryptographic hasher (FNV-1a).
+///
+/// The default SipHash guards against hash-flooding attacks, but that is not
+/// a concern for tokenizer lookup tables. FNV-1a is several times faster for
+/// the short byte keys used here (BPE ranks, SentencePiece pieces), and it
+/// keeps the hot counting path allocation-free.
+#[derive(Default, Clone, Copy)]
+pub struct FastBuildHasher;
+
+impl std::hash::BuildHasher for FastBuildHasher {
+    type Hasher = FastHasher;
+    fn build_hasher(&self) -> FastHasher {
+        FastHasher(0xcbf2_9ce4_8422_2325)
+    }
+}
+
+pub struct FastHasher(u64);
+
+impl std::hash::Hasher for FastHasher {
+    fn finish(&self) -> u64 {
+        self.0
+    }
+    fn write(&mut self, bytes: &[u8]) {
+        let mut h = self.0;
+        for &b in bytes {
+            h ^= u64::from(b);
+            h = h.wrapping_mul(0x100_0000_01b3);
+        }
+        self.0 = h;
+    }
+}
+
 /// File extension (lowercase, no dot). Returns None when absent.
 pub fn extension_of(path: &std::path::Path) -> Option<String> {
     let name = path.file_name()?.to_str()?;
