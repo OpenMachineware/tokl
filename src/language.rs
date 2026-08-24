@@ -262,6 +262,18 @@ pub static LANGUAGES: &[LangSpec] = &[
         raw: RawKind::None,
     },
     LangSpec {
+        name: "🔥Mojo",
+        aliases: &["mojo", "🔥"],
+        exts: &["mojo", "🔥"],
+        filenames: &[],
+        line_comments: &["#"],
+        line_comments_bol: &[],
+        block_comments: &[],
+        nestable: false,
+        strings: strings!(DQUOTE, SQUOTE, TRIPLE_DQUOTE, TRIPLE_SQUOTE),
+        raw: RawKind::None,
+    },
+    LangSpec {
         name: "Tcl",
         aliases: &["tcl", "tk"],
         exts: &["tcl", "tk"],

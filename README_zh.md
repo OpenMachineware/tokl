@@ -243,7 +243,7 @@ default_exts = []
 ## 语言支持
 
 C, C++, 汇编 (asm/s/S), Java, Kotlin, Scala, D, Vim 脚本, Bash, Zsh, Fish,
-Perl, Python, Tcl, Lua, PHP, Ruby, SQL, JSON, XML, XHTML, HTML, CSS,
+Perl, Python, Mojo, Tcl, Lua, PHP, Ruby, SQL, JSON, XML, XHTML, HTML, CSS,
 JavaScript, JSX, TypeScript, TSX, TOML, YAML, Rust, Go, Swift, Verilog,
 SystemVerilog, VHDL, Makefile, Ninja, CMake, Dockerfile, INI, Markdown,
 LaTeX, Texinfo, GCC MD（`.md`，优先级低于 Markdown）, LLVM TableGen（`.td`）。

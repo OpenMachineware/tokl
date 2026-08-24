@@ -266,7 +266,7 @@ source is actually in use.
 ## Language support
 
 C, C++, Assembly (asm/s/S), Java, Kotlin, Scala, D, Vim script, Bash, Zsh, Fish,
-Perl, Python, Tcl, Lua, PHP, Ruby, SQL, JSON, XML, XHTML, HTML, CSS,
+Perl, Python, Mojo, Tcl, Lua, PHP, Ruby, SQL, JSON, XML, XHTML, HTML, CSS,
 JavaScript, JSX, TypeScript, TSX, TOML, YAML, Rust, Go, Swift, Verilog,
 SystemVerilog, VHDL, Makefile, Ninja, CMake, Dockerfile, INI, Markdown,
 LaTeX, Texinfo, GCC MD (`.md`, lower priority than Markdown), LLVM TableGen (`.td`).
