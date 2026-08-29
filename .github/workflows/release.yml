@@ -17,39 +17,32 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - os: macos-latest
             target: aarch64-apple-darwin
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
+          # Windows not support yet
 
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+      - name: Setup Pixi (Mojo Environment)
+        uses: fabasoad/setup-mojo-action@v3
+
+      - name: Install Mojo via Pixi
+        run: |
+          pixi add mojo
 
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: pixi run mojo build src/main.mojo -o tokl
 
       - name: Rename binary (Linux/Mac)
-        if: runner.os != 'Windows'
         run: |
-          mv target/${{ matrix.target }}/release/tokl tokl-${{ github.ref_name }}-${{ matrix.target }}
-
-      - name: Rename binary (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          mv target/${{ matrix.target }}/release/tokl.exe tokl-${{ github.ref_name }}-${{ matrix.target }}.exe
+          mv tokl tokl-${{ github.ref_name }}-${{ matrix.target }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-
           files: |
             tokl-${{ github.ref_name }}-${{ matrix.target }}
-            tokl-${{ github.ref_name }}-${{ matrix.target }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

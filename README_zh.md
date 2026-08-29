@@ -7,9 +7,7 @@
 
 - 行数统计：按语言语法（注释 / 字符串标记）区分 **Code / Comments / Blanks**
 - Token 统计：为 13 类主流大模型（ChatGPT / Claude / Gemini / Grok / DeepSeek /
-  GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral）提供分词计数，
-  别名跟踪最新版本（DeepSeek V4、GPT-5.6、Claude 5、Gemini 3.5、Grok 4.6、
-  GLM-5.2、Kimi K3、Qwen3.5 等）
+  GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral）提供分词计数
 - 首次运行自动生成配置文件（`~/.config/tokl/user_config.toml`），默认值符合
   大多数开发者需求（默认模型：DeepSeek V4）
 - 纯 Rust 标准库实现，无第三方依赖，单二进制分发（macOS / Linux / Windows）
@@ -27,7 +25,6 @@
 | --- | --- |
 | Linux（x86_64） | `tokl-<tag>-x86_64-unknown-linux-gnu` |
 | macOS（Apple Silicon） | `tokl-<tag>-aarch64-apple-darwin` |
-| Windows（x86_64） | `tokl-<tag>-x86_64-pc-windows-msvc.exe` |
 
 下载对应平台的版本后，加执行权限、改个名就能直接用，无需安装、无任何依赖：
 
@@ -37,12 +34,6 @@ curl -LO https://github.com/OpenMachineware/tokl/releases/download/v0.1.0/tokl-v
 chmod +x tokl-v0.1.0-x86_64-unknown-linux-gnu
 mv tokl-v0.1.0-x86_64-unknown-linux-gnu tokl
 ./tokl .
-```
-
-```powershell
-# Windows：把下载的 .exe 重命名后直接运行
-ren tokl-v0.1.0-x86_64-pc-windows-msvc.exe tokl.exe
-.\tokl.exe .
 ```
 
 > 说明：macOS 目前只构建 Apple Silicon（aarch64）版本，Intel Mac 用户请从源码构建（见下）。
@@ -73,25 +64,10 @@ Authenticode 证书——两者都需要付费的开发者账号）。因此 mac
 
   （若提示 `No such xattr`，说明文件没有隔离属性，直接运行即可。）
 
-### Windows（SmartScreen）
-
-首次运行可能提示：*Windows 已保护你的电脑。*
-
-- **方式一**：右键 `.exe` 文件 → **属性**，勾选底部的**解除锁定**，点击**确定**，
-  然后正常运行。
-- **方式二**：在警告弹窗中点击**更多信息**，再点击**仍要运行**。
-
-  也可以在 PowerShell 中编程式解除锁定：
-
-  ```powershell
-  Unblock-File .\tokl.exe
-  ```
-
 ## 从源码构建
 
 ```bash
-cargo build --release
-# 二进制位于 target/release/tokl
+mojo build src/main.mojo -o tokl
 ```
 
 ## 用法

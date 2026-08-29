@@ -8,9 +8,7 @@ A command-line tool that counts code lines and tokens.
 - Line counting: classify lines into **Code / Comments / Blanks** using language
   syntax (comment / string markers)
 - Token counting: tokenize for 13 mainstream LLMs (ChatGPT / Claude / Gemini /
-  Grok / DeepSeek / GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral),
-  with aliases tracking the latest releases (DeepSeek V4, GPT-5.6, Claude 5,
-  Gemini 3.5, Grok 4.6, GLM-5.2, Kimi K3, Qwen3.5, ...)
+  Grok / DeepSeek / GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral)
 - A config file (`~/.config/tokl/user_config.toml`) is generated automatically
   on first run, with defaults for most developers (default model: DeepSeek V4)
 - Pure Rust standard library, no third-party dependencies, single-binary
@@ -31,7 +29,6 @@ Actions builds and uploads them automatically whenever a `v*` tag is pushed.
 | --- | --- |
 | Linux (x86_64) | `tokl-<tag>-x86_64-unknown-linux-gnu` |
 | macOS (Apple Silicon) | `tokl-<tag>-aarch64-apple-darwin` |
-| Windows (x86_64) | `tokl-<tag>-x86_64-pc-windows-msvc.exe` |
 
 Download the asset for your platform, then make it executable and rename it —
 that's all, no install step and no dependencies:
@@ -42,12 +39,6 @@ curl -LO https://github.com/OpenMachineware/tokl/releases/download/v0.1.0/tokl-v
 chmod +x tokl-v0.1.0-x86_64-unknown-linux-gnu
 mv tokl-v0.1.0-x86_64-unknown-linux-gnu tokl
 ./tokl .
-```
-
-```powershell
-# Windows: rename the downloaded .exe and run it
-ren tokl-v0.1.0-x86_64-pc-windows-msvc.exe tokl.exe
-.\tokl.exe .
 ```
 
 > Note: the macOS build currently targets Apple Silicon (aarch64). Intel Mac
@@ -82,26 +73,10 @@ be verified.*
   (If the command reports `No such xattr`, the file has no quarantine flag —
   just run it.)
 
-### Windows (SmartScreen)
-
-The first run may show: *Windows protected your PC.*
-
-- **Option A** — right-click the `.exe`, choose **Properties**, tick
-  **Unblock** at the bottom, click **OK**, then run it as usual.
-- **Option B** — in the warning dialog click **More info**, then **Run
-  anyway**.
-
-  In PowerShell you can also unblock it programmatically:
-
-  ```powershell
-  Unblock-File .\tokl.exe
-  ```
-
 ## Build from source
 
 ```bash
-cargo build --release
-# Binary is at target/release/tokl
+mojo build src/main.mojo -o tokl
 ```
 
 ## Usage
