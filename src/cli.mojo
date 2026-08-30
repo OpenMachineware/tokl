@@ -22,6 +22,8 @@
 
 from std.collections import List, Optional
 
+from version import VERSION
+
 
 struct Options(Movable):
     var verbose: Bool
@@ -187,7 +189,7 @@ Examples:
 
 
 def version_info() -> String:
-    return """tokl 0.1.3
+    return """tokl {}
 Token and Lines Counter
 License: GPL-3.0
-Copyright (C) 2026 Jia Liu & tokl contributors"""
+Copyright (C) 2026 Jia Liu & tokl contributors""".format(VERSION)

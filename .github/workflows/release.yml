@@ -39,7 +39,7 @@ jobs:
           pixi add mojo || true
 
       - name: Build binary
-        run: pixi run mojo build src/main.mojo -o tokl
+        run: pixi run build
 
       - name: Rename binary (Linux/Mac)
         run: |

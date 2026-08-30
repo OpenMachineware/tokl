@@ -24,6 +24,7 @@ from std.collections import List
 
 from count import LangAgg
 from util import thousands
+from version import VERSION
 
 comptime FMT_TABLE = 0
 comptime FMT_MARKDOWN = 1
@@ -348,7 +349,7 @@ def render_json(
     var out = String()
     out += "{\n"
     out += '  "tool": "tokl",\n'
-    out += '  "version": "0.1.0",\n'
+    out += '  "version": {},\n'.format(json_str(VERSION))
     out += '  "model": {},\n'.format(json_str(model))
     out += '  "languages": [\n'
     var r = 0
