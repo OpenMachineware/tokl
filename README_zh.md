@@ -9,7 +9,7 @@
 - Token 统计：为 13 类主流大模型（ChatGPT / Claude / Gemini / Grok / DeepSeek /
   GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral）提供分词计数
 - 首次运行自动生成配置文件（`~/.config/tokl/user_config.toml`），默认值符合
-  大多数开发者需求（默认模型：DeepSeek V4）
+  大多数开发者需求（默认模型：DeepSeek）
 - 纯 Rust 标准库实现，无第三方依赖，单二进制分发（macOS / Linux / Windows）
 - 多线程并行统计，默认使用全部 CPU 核心，可用 `-j` 调整线程数
 - 模块化设计：`cli`（参数解析）、`config`（配置加载）、`scanner`（文件扫描）、
@@ -223,6 +223,12 @@ Perl, Python, Mojo, Tcl, Lua, PHP, Ruby, SQL, JSON, XML, XHTML, HTML, CSS,
 JavaScript, JSX, TypeScript, TSX, TOML, YAML, Rust, Go, Swift, Verilog,
 SystemVerilog, VHDL, Makefile, Ninja, CMake, Dockerfile, INI, Markdown,
 LaTeX, Texinfo, GCC MD（`.md`，优先级低于 Markdown）, LLVM TableGen（`.td`）。
+
+GPU 着色器语言：CUDA（`.cu`/`.cuh`）、HIP/ROCm（`.hip`）、Metal（`.metal`）、
+GLSL（`.glsl`/`.vert`/`.frag`/`.comp`/`.tesc`/`.tese`/`.geom`）、
+HLSL（`.hlsl`/`.fx`/`.fxh`）、WGSL（`.wgsl`）。
+
+WebAssembly：WAT（`.wat`/`.wast`）。
 
 ## 输出示例
 

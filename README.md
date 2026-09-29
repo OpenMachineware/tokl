@@ -10,7 +10,7 @@ A command-line tool that counts code lines and tokens.
 - Token counting: tokenize for 13 mainstream LLMs (ChatGPT / Claude / Gemini /
   Grok / DeepSeek / GLM / Kimi / Qwen / Seed / Yuanbao / Llama / Mistral)
 - A config file (`~/.config/tokl/user_config.toml`) is generated automatically
-  on first run, with defaults for most developers (default model: DeepSeek V4)
+  on first run, with defaults for most developers (default model: DeepSeek)
 - Pure Rust standard library, no third-party dependencies, single-binary
   distribution (macOS / Linux / Windows)
 - Parallel counting across all CPU cores by default, tunable with `-j`
@@ -245,6 +245,12 @@ Perl, Python, Mojo, Tcl, Lua, PHP, Ruby, SQL, JSON, XML, XHTML, HTML, CSS,
 JavaScript, JSX, TypeScript, TSX, TOML, YAML, Rust, Go, Swift, Verilog,
 SystemVerilog, VHDL, Makefile, Ninja, CMake, Dockerfile, INI, Markdown,
 LaTeX, Texinfo, GCC MD (`.md`, lower priority than Markdown), LLVM TableGen (`.td`).
+
+GPU shader languages: CUDA (`.cu`/`.cuh`), HIP/ROCm (`.hip`), Metal (`.metal`),
+GLSL (`.glsl`/`.vert`/`.frag`/`.comp`/`.tesc`/`.tese`/`.geom`), HLSL (`.hlsl`/`.fx`/`.fxh`),
+WGSL (`.wgsl`).
+
+WebAssembly: WAT (`.wat`/`.wast`).
 
 ## Sample output
 

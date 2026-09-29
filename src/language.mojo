@@ -721,6 +721,108 @@ def languages() -> List[LangSpec]:
             RAW_NONE,
         )
     )
+    # ---- GPU shader languages ----
+    L.append(
+        LangSpec(
+            "CUDA",
+            ["cuda", "cu"],
+            ["cu", "cuh"],
+            [],
+            ["//"],
+            [],
+            [("/*", "*/")],
+            False,
+            sl(dquote(), squote()),
+            RAW_NONE,
+        )
+    )
+    L.append(
+        LangSpec(
+            "HIP",
+            ["hip", "rocm", "amd-gpu"],
+            ["hip"],
+            [],
+            ["//"],
+            [],
+            [("/*", "*/")],
+            False,
+            sl(dquote(), squote()),
+            RAW_NONE,
+        )
+    )
+    # Metal shader files (.metal). Note: Metal also uses .h headers,
+    # but these are handled as C headers by default.
+    L.append(
+        LangSpec(
+            "Metal",
+            ["metal", "msl"],
+            ["metal"],
+            [],
+            ["//"],
+            [],
+            [("/*", "*/")],
+            False,
+            sl(dquote(), squote()),
+            RAW_NONE,
+        )
+    )
+    L.append(
+        LangSpec(
+            "GLSL",
+            ["glsl", "opengl-shader"],
+            ["glsl", "vert", "frag", "comp", "tesc", "tese", "geom"],
+            [],
+            ["//"],
+            [],
+            [("/*", "*/")],
+            False,
+            sl(dquote(), squote()),
+            RAW_NONE,
+        )
+    )
+    L.append(
+        LangSpec(
+            "HLSL",
+            ["hlsl", "directx-shader", "fx"],
+            ["hlsl", "fx", "fxh"],
+            [],
+            ["//"],
+            [],
+            [("/*", "*/")],
+            False,
+            sl(dquote(), squote()),
+            RAW_NONE,
+        )
+    )
+    L.append(
+        LangSpec(
+            "WGSL",
+            ["wgsl", "webgpu-shader"],
+            ["wgsl"],
+            [],
+            ["//"],
+            [],
+            [("/*", "*/")],
+            False,
+            sl(dquote()),
+            RAW_NONE,
+        )
+    )
+    # ---- WebAssembly ----
+    L.append(
+        LangSpec(
+            "WAT",
+            ["wat", "wast", "webassembly-text"],
+            ["wat", "wast"],
+            [],
+            [";;"],
+            [],
+            [("(;", ";)")],
+            True,  # WAT block comments are nestable
+            sl(dquote()),
+            RAW_NONE,
+        )
+    )
     # ---- Hardware description ----
     L.append(
         LangSpec(
