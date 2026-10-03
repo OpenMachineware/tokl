@@ -185,21 +185,23 @@ default_exts = []
 
 各模型的分词算法分为两类：**Byte-level BPE**（tiktoken 风格）与 **SentencePiece**（BPE with byte fallback）。
 
-| 模型 | 别名 | 分词器类型 | 词表来源 |
-| --- | --- | --- | --- |
-| `chatgpt` | `gpt-5.6` `gpt-5.5` `gpt-5.2` `gpt-4o` `gpt-5` `sol` `terra` `luna` `o1` `o3` 等 | Byte-level BPE | tiktoken 的 `o200k_base` / `cl100k_base` |
-| `claude` | `claude-5` `claude-opus-5` `claude-fable-5` `claude-mythos-5` `claude-4.8` `claude-4` `claude-sonnet` 等 | BPE（未开源） | 无公开词表，默认近似 |
-| `gemini` | `gemini-3.5` `gemini-3` `gemma` 等 | SentencePiece | 基于 Gemma 词表（`gemma_tokenizer.model`） |
-| `grok` | `grok-4.6` `grok-4.3` `grok-4.1` `grok-4` `grok-1` `xai` 等 | SentencePiece | Grok-1 开源 `tokenizer.model` |
-| `deepseek` | `deepseek-v4` `deepseek-v4-pro` `deepseek-v4-flash` `deepseek-v3` `deepseek-coder` 等 | Byte-level BPE | 128K 词表（`deepseek_v4.tokenizer.json`） |
-| `glm` | `glm-5.2` `glm-5` `glm-4.7` `glm-4` `zhipu` 等 | BPE | GLM `tokenizer.json` |
-| `kimi` | `kimi-k3` `kimi-k2` `moonshot` 等 | SentencePiece | Kimi K2/K3 开源 `tokenizer.model` |
-| `qwen` | `qwen3.5` `qwen3.5-omni` `qwen3` `qwen2.5` 等 | Byte-level BPE | `qwen.tiktoken` |
-| `seed` | `seed-2.0` `doubao-seed-2.0` `doubao` `豆包` 等 | BPE（自研） | 无公开词表，默认近似 |
-| `yuanbao` | `hunyuan` `hunyuan-turbos` `hunyuan-t1` `hy3` `混元` 等 | SentencePiece | 混元 `tokenizer.model` |
-| `llama` | `llama-4.1` `llama-4` `scout` `maverick` `llama3` `meta` 等 | Byte-level BPE | Llama 3/4 `llama3.tiktoken` |
-| `llama2` | `llama-2` 等 | SentencePiece | Llama 2 `tokenizer.model` |
-| `mistral` | `mistral-3` `mistral-medium-3.5` `mistral-small-4` `mixtral` 等 | SentencePiece | Mistral `tokenizer.model` |
+| 模型 | 分词器类型 | 词表来源 |
+| --- | --- | --- |
+| `chatgpt` | Byte-level BPE | tiktoken 的 `o200k_base` / `cl100k_base` |
+| `claude` | BPE（未开源） | 无公开词表，默认近似 |
+| `gemini` | SentencePiece | 基于 Gemma 词表（`gemma_tokenizer.model`） |
+| `grok` | SentencePiece | Grok-1 开源 `tokenizer.model` |
+| `deepseek` | Byte-level BPE | 128K 词表（`deepseek_v4.tokenizer.json`） |
+| `glm` | BPE | GLM `tokenizer.json` |
+| `kimi` | SentencePiece | Kimi 开源 `tokenizer.model` |
+| `qwen` | Byte-level BPE | `qwen.tiktoken` |
+| `seed` | BPE（自研） | 无公开词表，默认近似 |
+| `yuanbao` | SentencePiece | 混元 `tokenizer.model` |
+| `llama` | Byte-level BPE | Llama `llama3.tiktoken` |
+| `llama2` | SentencePiece | Llama 2 `tokenizer.model` |
+| `mistral` | SentencePiece | Mistral `tokenizer.model` |
+
+各模型均支持常用别名（如 `gpt`、`claude`、`gemini`、`deepseek`、`qwen` 等）。
 
 ### 精确 vs 近似
 

@@ -204,21 +204,23 @@ usual single-line form.
 Each model's tokenization algorithm falls into one of two families:
 **Byte-level BPE** (tiktoken style) and **SentencePiece** (BPE with byte fallback).
 
-| Model | Aliases | Tokenizer type | Vocab source |
-| --- | --- | --- | --- |
-| `chatgpt` | `gpt-5.6` `gpt-5.5` `gpt-5.2` `gpt-4o` `gpt-5` `sol` `terra` `luna` `o1` `o3`, etc. | Byte-level BPE | tiktoken `o200k_base` / `cl100k_base` |
-| `claude` | `claude-5` `claude-opus-5` `claude-fable-5` `claude-mythos-5` `claude-4.8` `claude-4` `claude-sonnet`, etc. | BPE (not open source) | no public vocab, approximate by default |
-| `gemini` | `gemini-3.5` `gemini-3` `gemma`, etc. | SentencePiece | based on Gemma vocab (`gemma_tokenizer.model`) |
-| `grok` | `grok-4.6` `grok-4.3` `grok-4.1` `grok-4` `grok-1` `xai`, etc. | SentencePiece | open `tokenizer.model` from Grok-1 |
-| `deepseek` | `deepseek-v4` `deepseek-v4-pro` `deepseek-v4-flash` `deepseek-v3` `deepseek-coder`, etc. | Byte-level BPE | 128K vocab (`deepseek_v4.tokenizer.json`) |
-| `glm` | `glm-5.2` `glm-5` `glm-4.7` `glm-4` `zhipu`, etc. | BPE | GLM `tokenizer.json` |
-| `kimi` | `kimi-k3` `kimi-k2` `moonshot`, etc. | SentencePiece | open `tokenizer.model` from Kimi K2/K3 |
-| `qwen` | `qwen3.5` `qwen3.5-omni` `qwen3` `qwen2.5`, etc. | Byte-level BPE | `qwen.tiktoken` |
-| `seed` | `seed-2.0` `doubao-seed-2.0` `doubao`, etc. | BPE (proprietary) | no public vocab, approximate by default |
-| `yuanbao` | `hunyuan` `hunyuan-turbos` `hunyuan-t1` `hy3`, etc. | SentencePiece | Hunyuan `tokenizer.model` |
-| `llama` | `llama-4.1` `llama-4` `scout` `maverick` `llama3` `meta`, etc. | Byte-level BPE | Llama 3/4 `llama3.tiktoken` |
-| `llama2` | `llama-2`, etc. | SentencePiece | Llama 2 `tokenizer.model` |
-| `mistral` | `mistral-3` `mistral-medium-3.5` `mistral-small-4` `mixtral`, etc. | SentencePiece | Mistral `tokenizer.model` |
+| Model | Tokenizer type | Vocab source |
+| --- | --- | --- |
+| `chatgpt` | Byte-level BPE | tiktoken `o200k_base` / `cl100k_base` |
+| `claude` | BPE (not open source) | no public vocab, approximate by default |
+| `gemini` | SentencePiece | based on Gemma vocab (`gemma_tokenizer.model`) |
+| `grok` | SentencePiece | open `tokenizer.model` from Grok-1 |
+| `deepseek` | Byte-level BPE | 128K vocab (`deepseek_v4.tokenizer.json`) |
+| `glm` | BPE | GLM `tokenizer.json` |
+| `kimi` | SentencePiece | open `tokenizer.model` from Kimi |
+| `qwen` | Byte-level BPE | `qwen.tiktoken` |
+| `seed` | BPE (proprietary) | no public vocab, approximate by default |
+| `yuanbao` | SentencePiece | Hunyuan `tokenizer.model` |
+| `llama` | Byte-level BPE | Llama `llama3.tiktoken` |
+| `llama2` | SentencePiece | Llama 2 `tokenizer.model` |
+| `mistral` | SentencePiece | Mistral `tokenizer.model` |
+
+Aliases are supported for each model (e.g., `gpt`, `claude`, `gemini`, `deepseek`, `qwen`, etc.).
 
 ### Exact vs approximate
 
