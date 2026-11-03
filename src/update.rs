@@ -20,6 +20,7 @@ use shipup::{UpdateEvent, UpdaterBuilder};
 use std::io::Write;
 
 const MANIFEST_BASE_URL: &str = "https://openmachineware.github.io/tokl/latest";
+const PUBLIC_KEY: &str = "Zlg3wdewbxUmc9AoAjl/ZKCJ7vexCT1Bsu1LGLpRQH8=";
 
 pub fn current_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
@@ -44,6 +45,7 @@ pub fn check_update() -> shipup::Result<Option<String>> {
     let updater = UpdaterBuilder::new()
         .current_version(current_version())?
         .endpoint(&url)
+        .public_key(PUBLIC_KEY)
         .build()?;
 
     let update = updater.check()?;
@@ -64,6 +66,7 @@ pub fn self_update() -> shipup::Result<()> {
     let updater = UpdaterBuilder::new()
         .current_version(current_version())?
         .endpoint(&url)
+        .public_key(PUBLIC_KEY)
         .build()?;
 
     println!("Checking for updates...");
