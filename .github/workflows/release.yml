@@ -72,6 +72,7 @@ jobs:
           SHIPUP_PRIVATE_KEY: ${{ secrets.SHIPUP_PRIVATE_KEY }}
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
+          mkdir -p docs
 
           # Write private key to file
           echo "$SHIPUP_PRIVATE_KEY" > /tmp/private.key
@@ -83,7 +84,7 @@ jobs:
             --package artifacts/tokl-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz \
             --package-type archive \
             --url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/tokl-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz" \
-            --manifest latest-linux.json \
+            --manifest docs/latest-linux.json \
             -k /tmp/private.key
 
           # macOS ARM64
@@ -93,7 +94,7 @@ jobs:
             --package artifacts/tokl-${{ github.ref_name }}-aarch64-apple-darwin.tar.gz \
             --package-type archive \
             --url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/tokl-${{ github.ref_name }}-aarch64-apple-darwin.tar.gz" \
-            --manifest latest-macos.json \
+            --manifest docs/latest-macos.json \
             -k /tmp/private.key
 
           rm /tmp/private.key
@@ -104,16 +105,12 @@ jobs:
           generate_release_notes: true
           files: |
             artifacts/*.tar.gz
-            latest-*.json
+            docs/*.json
 
-      - name: Deploy latest.json to gh-pages
+      - name: Commit latest.json to docs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin gh-pages || true
-          git checkout gh-pages || git checkout --orphan gh-pages
-          git rm -rf . 2>/dev/null || true
-          cp latest-linux.json latest-macos.json .
-          git add latest-linux.json latest-macos.json
+          git add docs/latest-linux.json docs/latest-macos.json
           git commit -m "Update latest.json for ${{ github.ref_name }}"
-          git push origin gh-pages
+          git push origin HEAD:main
