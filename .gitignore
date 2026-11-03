@@ -1,6 +1,2 @@
-# pixi environments
-.pixi/*
-!.pixi/config.toml
-
-# generated from pixi.toml by scripts/gen_version.sh
-src/version.mojo
+# Added by cargo
+target/
