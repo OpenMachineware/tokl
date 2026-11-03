@@ -12,16 +12,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: macos-latest
-            target: aarch64-apple-darwin
-
-    runs-on: ${{ matrix.os }}
+  build-linux:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,25 +21,109 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: x86_64-unknown-linux-gnu
 
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target x86_64-unknown-linux-gnu
 
       - name: Package binary
         run: |
-          cd target/${{ matrix.target }}/release
-          tar -czf ../../../tokl-${{ github.ref_name }}-${{ matrix.target }}.tar.gz tokl
+          cd target/x86_64-unknown-linux-gnu/release
+          tar -czf ../../../tokl-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz tokl
           cd ../../..
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tokl-${{ matrix.target }}
-          path: tokl-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          name: tokl-linux
+          path: tokl-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Build binary
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Import signing certificate
+        run: |
+          echo "${{ secrets.SIGNING_CERTIFICATE }}" | base64 --decode > /tmp/cert.p12
+
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security list-keychains -s build.keychain
+
+          security import /tmp/cert.p12 -k build.keychain \
+            -P "${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}" \
+            -T /usr/bin/codesign
+
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "" build.keychain
+
+          security find-certificate -c "Local Development Signing" -p build.keychain > /tmp/cert.pem
+          sudo security add-trusted-cert -d -r trustRoot \
+            -k ~/Library/Keychains/build.keychain-db /tmp/cert.pem
+
+          rm /tmp/cert.p12 /tmp/cert.pem
+
+      - name: Sign binary
+        run: |
+          for i in 1 2 3 4; do
+            if codesign --force --sign "Local Development Signing" target/aarch64-apple-darwin/release/tokl; then
+              exit 0
+            fi
+            [ $i -lt 4 ] && sleep 15
+          done
+          exit 1
+
+      - name: Package binary
+        run: |
+          cd target/aarch64-apple-darwin/release
+          tar -czf ../../../tokl-${{ github.ref_name }}-aarch64-apple-darwin.tar.gz tokl
+          cd ../../..
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tokl-macos
+          path: tokl-${{ github.ref_name }}-aarch64-apple-darwin.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build binary
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Package binary
+        run: |
+          cd target/x86_64-pc-windows-msvc/release
+          7z a ../../../tokl-${{ github.ref_name }}-x86_64-pc-windows-msvc.zip tokl.exe
+          cd ../../..
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tokl-windows
+          path: tokl-${{ github.ref_name }}-x86_64-pc-windows-msvc.zip
 
   release:
-    needs: build
+    needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -97,6 +173,16 @@ jobs:
             --manifest docs/latest-macos.json \
             -k /tmp/private.key
 
+          # Windows x86_64
+          shipup-cli release \
+            --version "$VERSION" \
+            --target x86_64-pc-windows-msvc \
+            --package artifacts/tokl-${{ github.ref_name }}-x86_64-pc-windows-msvc.zip \
+            --package-type archive \
+            --url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/tokl-${{ github.ref_name }}-x86_64-pc-windows-msvc.zip" \
+            --manifest docs/latest-windows.json \
+            -k /tmp/private.key
+
           rm /tmp/private.key
 
       - name: Create GitHub Release
@@ -104,13 +190,13 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            artifacts/*.tar.gz
+            artifacts/*
             docs/*.json
 
       - name: Commit latest.json to docs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/latest-linux.json docs/latest-macos.json
+          git add docs/latest-linux.json docs/latest-macos.json docs/latest-windows.json
           git commit -m "Update latest.json for ${{ github.ref_name }}"
           git push origin HEAD:main
