@@ -8,48 +8,112 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build:
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
-            platform: linux-64
             target: x86_64-unknown-linux-gnu
           - os: macos-latest
-            platform: osx-arm64
             target: aarch64-apple-darwin
-          # Windows not support yet
 
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Pixi (Mojo Environment)
-        uses: fabasoad/setup-mojo-action@v3
-
-      - name: Configure Pixi platform
-        run: |
-          pixi workspace platform add ${{ matrix.platform }} || true
-          pixi install
-
-      - name: Install Mojo via Pixi
-        run: |
-          pixi add mojo || true
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Build binary
-        run: pixi run build
+        run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Rename binary (Linux/Mac)
+      - name: Package binary
         run: |
-          mv tokl tokl-${{ github.ref_name }}-${{ matrix.target }}
+          cd target/${{ matrix.target }}/release
+          tar -czf ../../../tokl-${{ github.ref_name }}-${{ matrix.target }}.tar.gz tokl
+          cd ../../..
 
-      - name: Upload Release Asset
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tokl-${{ matrix.target }}
+          path: tokl-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Install shipup-cli
+        uses: dtolnay/rust-toolchain@stable
+      - run: cargo install shipup-cli
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Create latest.json
+        env:
+          SHIPUP_PRIVATE_KEY: ${{ secrets.SHIPUP_PRIVATE_KEY }}
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          # Write private key to file
+          echo "$SHIPUP_PRIVATE_KEY" > /tmp/private.key
+
+          # Linux x86_64
+          shipup-cli release \
+            --version "$VERSION" \
+            --target x86_64-unknown-linux-gnu \
+            --package artifacts/tokl-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz \
+            --package-type archive \
+            --url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/tokl-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz" \
+            --manifest latest-linux.json \
+            -k /tmp/private.key
+
+          # macOS ARM64
+          shipup-cli release \
+            --version "$VERSION" \
+            --target aarch64-apple-darwin \
+            --package artifacts/tokl-${{ github.ref_name }}-aarch64-apple-darwin.tar.gz \
+            --package-type archive \
+            --url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/tokl-${{ github.ref_name }}-aarch64-apple-darwin.tar.gz" \
+            --manifest latest-macos.json \
+            -k /tmp/private.key
+
+          rm /tmp/private.key
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            tokl-${{ github.ref_name }}-${{ matrix.target }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            artifacts/*.tar.gz
+            latest-*.json
+
+      - name: Deploy latest.json to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages || true
+          git checkout gh-pages || git checkout --orphan gh-pages
+          git rm -rf . 2>/dev/null || true
+          cp latest-linux.json latest-macos.json .
+          git add latest-linux.json latest-macos.json
+          git commit -m "Update latest.json for ${{ github.ref_name }}"
+          git push origin gh-pages
