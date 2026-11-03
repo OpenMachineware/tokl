@@ -1,0 +1,14 @@
+{
+  "version": "0.1.4",
+  "force_update": false,
+  "pub_date": "2026-11-03T12:28:59Z",
+  "packages": {
+    "x86_64-pc-windows-msvc": {
+      "url": "https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-x86_64-pc-windows-msvc.zip",
+      "signature": "bYwaQeuAkYzKyiWpzSPD7VdLAaBqVwpYwzzdmTx7KDm3d66BKx5sBQfYj9jjNN9zGHuvErmi7r3vKnTVTb9/BA==",
+      "checksum": "sha256:9d925f68096c562381f2085fc843d2aa1f4621d759685c37186460fd83f42868",
+      "package_type": "archive",
+      "size": 2281052
+    }
+  }
+}

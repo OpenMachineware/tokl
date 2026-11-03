@@ -1,0 +1,14 @@
+{
+  "version": "0.1.4",
+  "force_update": false,
+  "pub_date": "2026-11-03T12:28:59Z",
+  "packages": {
+    "x86_64-unknown-linux-gnu": {
+      "url": "https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-x86_64-unknown-linux-gnu.tar.gz",
+      "signature": "1Fs8qBLB5lr+krX9ced9dgCfBQsw4pImLDHTDmsLRHjiJcmpJ+9Nm8tARjzU5INCEfwSVMrw7/TkbHml+O9aBA==",
+      "checksum": "sha256:4bcc4b311492adcaf41e3627a75aea51d3e56bfbce2edd0db6f1ae84e5abaf9b",
+      "package_type": "archive",
+      "size": 2608995
+    }
+  }
+}

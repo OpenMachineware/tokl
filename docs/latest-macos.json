@@ -1,0 +1,14 @@
+{
+  "version": "0.1.4",
+  "force_update": false,
+  "pub_date": "2026-11-03T12:28:59Z",
+  "packages": {
+    "aarch64-apple-darwin": {
+      "url": "https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-aarch64-apple-darwin.tar.gz",
+      "signature": "isVIl4X68JDZmgTNidF5oT4cX5QIRaVYCaNv6fk+asLe9tRYLXgYmjzvC8WujfJt+jpygxW9IKLxaVxihTYQDg==",
+      "checksum": "sha256:aeab862de80dfa259ed26606bb14f5bfc972351f2b602b5f60b2f9947def03d5",
+      "package_type": "archive",
+      "size": 2314571
+    }
+  }
+}
