@@ -5,10 +5,10 @@
   "packages": {
     "x86_64-unknown-linux-gnu": {
       "url": "https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-x86_64-unknown-linux-gnu.tar.gz",
-      "signature": "P3o5qaZs1BvqJlot+8fQOyAT5a/4iuUm3jB0bqHCmanKLRRpqETFvqyXzCmon7xv6dfDU9kV++gkNu+wxTmwCQ==",
-      "checksum": "sha256:60e4d230718432eebf57ffa711579cb2ea560bd279d060d7a5b3ac41d86e0958",
+      "signature": "WxShYQlrIrTiaOwqK07Ne7cC6cD5urCstPhi7yeN0kM+TlP9S/xVtX5AuLhvJcYWD6RqNYmKJvnaRxkkYH8jCg==",
+      "checksum": "sha256:9ff5ee8de9c041c591a2423eb8c2b4becb78bc260652d0faa74d2e2b72bd0dc3",
       "package_type": "archive",
-      "size": 2612386
+      "size": 2612398
     }
   }
 }
