@@ -177,6 +177,7 @@ Options:
                              (created automatically on first run)
     --check-update           Check if a newer version is available
     --self-update            Update tokl to the latest version
+                             (use sudo if installed in /usr/local/bin)
     <PATH>                   Paths to scan (multiple allowed, recursive)
 
 Configuration:
