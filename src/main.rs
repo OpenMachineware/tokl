@@ -31,13 +31,14 @@ mod scanner;
 mod sp;
 mod tokenize;
 mod toml;
+mod update;
 mod util;
 mod vcs;
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use std::sync::{mpsc, Mutex};
+use std::sync::{Mutex, mpsc};
 use std::thread;
 
 use cli::{USAGE, VERSION_INFO};
@@ -66,6 +67,12 @@ fn main() -> ExitCode {
     }
     if opts.init_config {
         return init_config();
+    }
+    if opts.check_update {
+        return check_update();
+    }
+    if opts.self_update {
+        return self_update();
     }
 
     // Load config (CLI flags take precedence)
@@ -321,4 +328,37 @@ fn init_config() -> ExitCode {
     }
     println!("generated config file: {}", path.display());
     ExitCode::SUCCESS
+}
+
+/// --check-update: check for updates
+fn check_update() -> ExitCode {
+    match update::check_update() {
+        Ok(Some(msg)) => {
+            println!("{}", msg);
+            println!("Run `tokl --self-update` to update.");
+            ExitCode::SUCCESS
+        }
+        Ok(None) => {
+            println!(
+                "tokl is up to date (version {})",
+                update::current_version()
+            );
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error checking for updates: {}", e);
+            ExitCode::from(1)
+        }
+    }
+}
+
+/// --self-update: update tokl
+fn self_update() -> ExitCode {
+    match update::self_update() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("error updating: {}", e);
+            ExitCode::from(1)
+        }
+    }
 }

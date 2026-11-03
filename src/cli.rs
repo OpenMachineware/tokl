@@ -49,6 +49,8 @@ pub struct Options {
     pub show_help: bool,
     pub show_version: bool,
     pub init_config: bool,
+    pub check_update: bool,
+    pub self_update: bool,
 }
 
 pub fn parse(args: &[String]) -> Result<Options, String> {
@@ -67,6 +69,8 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
             "--version" | "-V" => opts.show_version = true,
             "-v" | "--verbose" => opts.verbose = true,
             "--init" => opts.init_config = true,
+            "--check-update" => opts.check_update = true,
+            "--self-update" => opts.self_update = true,
             "-m" | "--model" => {
                 let v = it.next().ok_or_else(|| {
                     format!("option {} requires an argument", arg)
@@ -133,7 +137,12 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
         }
     }
 
-    if opts.show_help || opts.show_version || opts.init_config {
+    if opts.show_help
+        || opts.show_version
+        || opts.init_config
+        || opts.check_update
+        || opts.self_update
+    {
         return Ok(opts);
     }
     if opts.paths.is_empty() {
@@ -166,6 +175,8 @@ Options:
                              (default: number of CPU cores)
     --init                   Write default user_config.toml to config dir
                              (created automatically on first run)
+    --check-update           Check if a newer version is available
+    --self-update            Update tokl to the latest version
     <PATH>                   Paths to scan (multiple allowed, recursive)
 
 Configuration:

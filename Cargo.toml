@@ -10,6 +10,9 @@ authors = ["Jia Liu & tokl contributors"]
 name = "tokl"
 path = "src/main.rs"
 
+[dependencies]
+shipup = { version = "0.5", features = ["blocking", "archive"] }
+
 [profile.release]
 lto = true
 codegen-units = 1

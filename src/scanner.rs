@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::thread;
 
-use crate::language::{LangSpec, LANGUAGES};
+use crate::language::{LANGUAGES, LangSpec};
 use crate::util::{extension_of, file_name_of};
 
 /// Scan options.
@@ -208,59 +208,65 @@ pub fn scan(
             let only_exts = &only_exts;
             let opts = opts;
             let registry = registry;
-            s.spawn(move || loop {
-                let (_canon, disp) = match dirs.lock().unwrap().pop_front() {
-                    Some(d) => d,
-                    None => return,
-                };
-                let Ok(entries) = std::fs::read_dir(&disp) else {
-                    continue;
-                };
-                let mut subdirs = Vec::new();
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    let ftype = match entry.file_type() {
-                        Ok(t) => t,
-                        Err(_) => continue,
+            s.spawn(move || {
+                loop {
+                    let (_canon, disp) = match dirs.lock().unwrap().pop_front()
+                    {
+                        Some(d) => d,
+                        None => return,
                     };
-                    if ftype.is_dir() {
-                        let name =
-                            entry.file_name().to_string_lossy().into_owned();
-                        if ignore_dirs.contains(&name.to_ascii_lowercase()) {
-                            continue;
-                        }
-                        if let Some(vcs) = &opts.vcs {
-                            // Prune ignored directories unless a negation
-                            // rule could re-include something below them.
-                            if vcs.should_skip(&path, true)
-                                && !vcs.has_negations
+                    let Ok(entries) = std::fs::read_dir(&disp) else {
+                        continue;
+                    };
+                    let mut subdirs = Vec::new();
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let ftype = match entry.file_type() {
+                            Ok(t) => t,
+                            Err(_) => continue,
+                        };
+                        if ftype.is_dir() {
+                            let name = entry
+                                .file_name()
+                                .to_string_lossy()
+                                .into_owned();
+                            if ignore_dirs.contains(&name.to_ascii_lowercase())
                             {
                                 continue;
                             }
+                            if let Some(vcs) = &opts.vcs {
+                                // Prune ignored directories unless a negation
+                                // rule could re-include something below them.
+                                if vcs.should_skip(&path, true)
+                                    && !vcs.has_negations
+                                {
+                                    continue;
+                                }
+                            }
+                            let canon = path
+                                .canonicalize()
+                                .unwrap_or_else(|_| path.clone());
+                            if visited.lock().unwrap().insert(canon.clone()) {
+                                subdirs.push((canon, path));
+                            }
+                        } else if ftype.is_file() || ftype.is_symlink() {
+                            let mut f = files.lock().unwrap();
+                            push_file(
+                                &path,
+                                &mut f,
+                                opts,
+                                registry,
+                                &ignore_dirs,
+                                &only_exts,
+                                only,
+                            );
                         }
-                        let canon = path
-                            .canonicalize()
-                            .unwrap_or_else(|_| path.clone());
-                        if visited.lock().unwrap().insert(canon.clone()) {
-                            subdirs.push((canon, path));
-                        }
-                    } else if ftype.is_file() || ftype.is_symlink() {
-                        let mut f = files.lock().unwrap();
-                        push_file(
-                            &path,
-                            &mut f,
-                            opts,
-                            registry,
-                            &ignore_dirs,
-                            &only_exts,
-                            only,
-                        );
                     }
-                }
-                // Process subdirectories later (LIFO keeps the old DFS order)
-                let mut d = dirs.lock().unwrap();
-                for sd in subdirs.into_iter().rev() {
-                    d.push_front(sd);
+                    // Process subdirectories later (LIFO keeps the old DFS order)
+                    let mut d = dirs.lock().unwrap();
+                    for sd in subdirs.into_iter().rev() {
+                        d.push_front(sd);
+                    }
                 }
             });
         }

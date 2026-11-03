@@ -172,7 +172,7 @@ impl<'a> Parser<'a> {
                             return Err(format!(
                                 "invalid escape: \\{}",
                                 other as char
-                            ))
+                            ));
                         }
                     }
                 }
@@ -236,7 +236,7 @@ impl<'a> Parser<'a> {
                     return Err(format!(
                         "unexpected object character: {:?} (position {})",
                         other, self.pos
-                    ))
+                    ));
                 }
             }
         }

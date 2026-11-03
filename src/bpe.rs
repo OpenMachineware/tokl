@@ -26,7 +26,7 @@ use std::collections::{BinaryHeap, HashMap};
 use std::path::Path;
 
 use crate::json::Value;
-use crate::util::{base64_decode, FastBuildHasher};
+use crate::util::{FastBuildHasher, base64_decode};
 
 pub struct BpeTokenizer {
     /// token bytes -> rank (lower merges first; 0-255 are single bytes)

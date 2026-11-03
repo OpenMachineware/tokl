@@ -41,7 +41,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::approx::{count_approx, ApproxParams};
+use crate::approx::{ApproxParams, count_approx};
 use crate::bpe::BpeTokenizer;
 use crate::sp::SpTokenizer;
 

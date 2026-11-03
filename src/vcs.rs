@@ -581,7 +581,9 @@ mod tests {
         assert!(ctx.should_skip(&dir.join("target"), true));
         assert!(!ctx.should_skip(&dir.join("target"), false));
         assert!(ctx.should_skip(&dir.join("src").join("a.log"), false));
-        assert!(!ctx.should_skip(&dir.join("src").join("important.log"), false));
+        assert!(
+            !ctx.should_skip(&dir.join("src").join("important.log"), false)
+        );
         assert!(!ctx.should_skip(&dir.join("src").join("main.rs"), false));
         assert!(!ctx.should_skip(&dir.join("src"), false));
         std::fs::remove_dir_all(&dir).unwrap();

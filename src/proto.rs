@@ -126,7 +126,7 @@ fn parse_sentence_piece(data: &[u8]) -> Result<SentencePiece, String> {
                 pos = np + len as usize;
             }
             other => {
-                return Err(format!("unsupported field in piece: {:?}", other))
+                return Err(format!("unsupported field in piece: {:?}", other));
             }
         }
     }
