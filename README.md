@@ -27,51 +27,29 @@ Actions builds and uploads them automatically whenever a `v*` tag is pushed.
 
 | Platform | Asset name |
 | --- | --- |
-| Linux (x86_64) | `tokl-<tag>-x86_64-unknown-linux-gnu` |
-| macOS (Apple Silicon) | `tokl-<tag>-aarch64-apple-darwin` |
+| Linux (x86_64) | `tokl-<tag>-x86_64-unknown-linux-gnu.tar.gz` |
+| macOS (Apple Silicon) | `tokl-<tag>-aarch64-apple-darwin.tar.gz` |
+| Windows (x86_64) | `tokl-<tag>-x86_64-pc-windows-msvc.zip` |
 
 Download the asset for your platform, then make it executable and rename it —
 that's all, no install step and no dependencies:
 
 ```bash
-# Linux / macOS (example for release v0.1.0):
-curl -LO https://github.com/OpenMachineware/tokl/releases/download/v0.1.0/tokl-v0.1.0-x86_64-unknown-linux-gnu
-chmod +x tokl-v0.1.0-x86_64-unknown-linux-gnu
-mv tokl-v0.1.0-x86_64-unknown-linux-gnu tokl
+# Linux / macOS (example for release v0.1.4):
+curl -LO https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf tokl-v0.1.4-x86_64-unknown-linux-gnu.tar.gz
 ./tokl .
 ```
 
-> Note: the macOS build currently targets Apple Silicon (aarch64). Intel Mac
-> users can build from source instead (see below).
+```powershell
+# Windows (PowerShell, example for release v0.1.4):
+Invoke-WebRequest -Uri https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-x86_64-pc-windows-msvc.zip -OutFile tokl.zip
+Expand-Archive tokl.zip
+.\tokl\tokl.exe .
+```
 
-## Security warning
-
-The pre-built binaries are **not code-signed** (no Apple Developer ID or
-Microsoft Authenticode certificate; both require paid developer accounts).
-Because of that, macOS and Windows may show a security warning the first time
-you run them. This is normal for open-source binaries downloaded from GitHub
-Releases — the warning does **not** mean the file is malicious.
-
-To be safe, always download from the official
-[Releases](https://github.com/OpenMachineware/tokl/releases) page and check
-that the asset name matches the release tag you expect.
-
-### macOS (Gatekeeper)
-
-The first run may show: *"tokl" cannot be opened because the developer cannot
-be verified.*
-
-- **Option A** — right-click (or Ctrl-click) the file in Finder, choose
-  **Open**, then click **Open** in the dialog that appears.
-- **Option B** — remove the quarantine flag in Terminal, then run:
-
-  ```bash
-  xattr -d com.apple.quarantine tokl
-  ./tokl .
-  ```
-
-  (If the command reports `No such xattr`, the file has no quarantine flag —
-  just run it.)
+> Note: the macOS build targets Apple Silicon (aarch64) and is code-signed.
+> Intel Mac users can build from source instead (see below).
 
 ## Build from source
 

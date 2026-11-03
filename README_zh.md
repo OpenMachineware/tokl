@@ -23,46 +23,27 @@
 
 | 平台 | 文件名 |
 | --- | --- |
-| Linux（x86_64） | `tokl-<tag>-x86_64-unknown-linux-gnu` |
-| macOS（Apple Silicon） | `tokl-<tag>-aarch64-apple-darwin` |
+| Linux（x86_64） | `tokl-<tag>-x86_64-unknown-linux-gnu.tar.gz` |
+| macOS（Apple Silicon） | `tokl-<tag>-aarch64-apple-darwin.tar.gz` |
+| Windows（x86_64） | `tokl-<tag>-x86_64-pc-windows-msvc.zip` |
 
-下载对应平台的版本后，加执行权限、改个名就能直接用，无需安装、无任何依赖：
+下载对应平台的版本后，解压即可使用，无需安装、无任何依赖：
 
 ```bash
-# Linux / macOS（以 v0.1.0 为例）：
-curl -LO https://github.com/OpenMachineware/tokl/releases/download/v0.1.0/tokl-v0.1.0-x86_64-unknown-linux-gnu
-chmod +x tokl-v0.1.0-x86_64-unknown-linux-gnu
-mv tokl-v0.1.0-x86_64-unknown-linux-gnu tokl
+# Linux / macOS（以 v0.1.4 为例）：
+curl -LO https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf tokl-v0.1.4-x86_64-unknown-linux-gnu.tar.gz
 ./tokl .
 ```
 
-> 说明：macOS 目前只构建 Apple Silicon（aarch64）版本，Intel Mac 用户请从源码构建（见下）。
+```powershell
+# Windows（PowerShell，以 v0.1.4 为例）：
+Invoke-WebRequest -Uri https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-x86_64-pc-windows-msvc.zip -OutFile tokl.zip
+Expand-Archive tokl.zip
+.\tokl\tokl.exe .
+```
 
-## 安全警告
-
-预编译二进制**未做代码签名**（没有 Apple Developer ID 或 Microsoft
-Authenticode 证书——两者都需要付费的开发者账号）。因此 macOS 和 Windows
-首次运行时都可能弹出安全警告。开源软件从 GitHub Releases 下载的二进制出现
-这种情况很正常——**出现警告不代表文件有恶意**。
-
-为安全起见，请始终从官方
-[Releases](https://github.com/OpenMachineware/tokl/releases) 页面下载，
-并核对文件名与发布版本号一致。
-
-### macOS（Gatekeeper）
-
-首次运行可能提示：*无法打开“tokl”，因为无法验证开发者。*
-
-- **方式一**：在 Finder 中右键（或按住 Control 点击）该文件，选择**打开**，
-  在弹出的对话框中再次点击**打开**。
-- **方式二**：在终端中清除隔离属性后再运行：
-
-  ```bash
-  xattr -d com.apple.quarantine tokl
-  ./tokl .
-  ```
-
-  （若提示 `No such xattr`，说明文件没有隔离属性，直接运行即可。）
+> 说明：macOS 构建目标为 Apple Silicon（aarch64）并已代码签名。Intel Mac 用户请从源码构建（见下）。
 
 ## 从源码构建
 
