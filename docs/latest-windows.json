@@ -5,10 +5,10 @@
   "packages": {
     "x86_64-pc-windows-msvc": {
       "url": "https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-x86_64-pc-windows-msvc.zip",
-      "signature": "bYwaQeuAkYzKyiWpzSPD7VdLAaBqVwpYwzzdmTx7KDm3d66BKx5sBQfYj9jjNN9zGHuvErmi7r3vKnTVTb9/BA==",
-      "checksum": "sha256:9d925f68096c562381f2085fc843d2aa1f4621d759685c37186460fd83f42868",
+      "signature": "8MQgeaYpeplxz7yLdPAd4yyJVBWzo5Ordj6wUTyPIAHawNt6S7tJesNDP9jaJBm8GftE/awHyzhkswnmv3mxAQ==",
+      "checksum": "sha256:c7afdb9b09da09d9f1960344a3ea9980c2486c158771af6ba8705c897ead5464",
       "package_type": "archive",
-      "size": 2281052
+      "size": 2280879
     }
   }
 }

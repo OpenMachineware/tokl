@@ -5,10 +5,10 @@
   "packages": {
     "aarch64-apple-darwin": {
       "url": "https://github.com/OpenMachineware/tokl/releases/download/v0.1.4/tokl-v0.1.4-aarch64-apple-darwin.tar.gz",
-      "signature": "isVIl4X68JDZmgTNidF5oT4cX5QIRaVYCaNv6fk+asLe9tRYLXgYmjzvC8WujfJt+jpygxW9IKLxaVxihTYQDg==",
-      "checksum": "sha256:aeab862de80dfa259ed26606bb14f5bfc972351f2b602b5f60b2f9947def03d5",
+      "signature": "o7c+XxpAltTp4ZQ99VCU1t4cEEbZWjK9X69CGk+qekGIJM7f8ZXfFNS7meWnaAEBYsW8zhR9e4LfL+kT/xWFBg==",
+      "checksum": "sha256:1162e57ac8fda10ee2e9aeaa3b67afcb0d14e2f844473c799e1c1bcb823084cb",
       "package_type": "archive",
-      "size": 2314571
+      "size": 2314828
     }
   }
 }
