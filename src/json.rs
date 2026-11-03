@@ -1,7 +1,7 @@
 // tokl -- Token and Line Counter
 //
 // This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu and tokl contributors
+// Copyright (C) 2026 Jia Liu
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
