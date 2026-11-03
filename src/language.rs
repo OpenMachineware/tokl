@@ -1,28 +1,5 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Language definitions: extension / filename -> language and syntax
-//! (comment and string markers).
-//!
-//! Notes:
-//! - `.md` is used by both Markdown and GCC MD; Markdown wins by default
-//!   (GCC MD is still recognized via `-e gcc-md` or language filtering).
-//! - `.h` defaults to C (C/C++ header).
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 /// String delimiter spec.
 #[derive(Debug, Clone, Copy)]
@@ -34,7 +11,6 @@ pub struct StringSpec {
     /// Escape character (e.g. '\\'); None means no backslash escaping
     pub escape: Option<char>,
 }
-
 /// Raw string (no escapes processed, may span lines) special modes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RawKind {
@@ -44,7 +20,6 @@ pub enum RawKind {
     /// Rust r"..." / r#"..."# / r##"..."##
     Rust,
 }
-
 /// Syntax information for one language.
 #[derive(Debug, Clone, Copy)]
 pub struct LangSpec {
@@ -70,13 +45,11 @@ pub struct LangSpec {
     /// Raw string mode
     pub raw: RawKind,
 }
-
 macro_rules! strings {
     ($($s:expr),* $(,)?) => {
         &[$($s),*]
     };
 }
-
 pub const DQUOTE: StringSpec =
     StringSpec { start: "\"", end: "\"", multiline: false, escape: Some('\\') };
 pub const SQUOTE: StringSpec =
@@ -97,7 +70,6 @@ pub const BACKTICK: StringSpec =
     StringSpec { start: "`", end: "`", multiline: true, escape: None };
 pub const LUA_LONG: StringSpec =
     StringSpec { start: "[[", end: "]]", multiline: true, escape: None };
-
 /// Language table. Order is priority: earlier languages win conflicts.
 pub static LANGUAGES: &[LangSpec] = &[
     // ---- C family ----

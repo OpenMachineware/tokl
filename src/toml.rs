@@ -1,31 +1,10 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Minimal TOML parser - only the subset used by tokl config files:
-//! top-level key-value pairs: `key = "string"`, `key = ["a", "b", ...]`,
-//! `key = true/false`, `key = 123`. Supports `#` comments, blank lines and
-//! multi-line arrays (each item on its own line). No inline / nested tables.
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 #[derive(Debug, Clone, Default)]
 pub struct MiniToml {
     entries: Vec<(String, TomlValue)>,
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum TomlValue {
     String(String),
@@ -33,7 +12,6 @@ pub enum TomlValue {
     Int(i64),
     StrArray(Vec<String>),
 }
-
 impl MiniToml {
     pub fn parse(text: &str) -> Result<MiniToml, String> {
         let mut entries = Vec::new();
@@ -80,14 +58,12 @@ impl MiniToml {
         }
         Ok(MiniToml { entries })
     }
-
     pub fn get_str(&self, key: &str) -> Option<String> {
         self.entries.iter().find(|(k, _)| k == key).and_then(|(_, v)| match v {
             TomlValue::String(s) => Some(s.clone()),
             _ => None,
         })
     }
-
     pub fn get_str_array(&self, key: &str) -> Option<Vec<String>> {
         self.entries.iter().find(|(k, _)| k == key).and_then(|(_, v)| match v {
             TomlValue::StrArray(a) => Some(a.clone()),
@@ -95,7 +71,6 @@ impl MiniToml {
         })
     }
 }
-
 fn strip_comment(line: &str) -> &str {
     // Strip only '#' outside strings
     let bytes = line.as_bytes();
@@ -118,7 +93,6 @@ fn strip_comment(line: &str) -> &str {
     }
     line
 }
-
 /// Return true when the text contains a closing `]` outside of a quoted string.
 fn array_is_closed(s: &str) -> bool {
     let bytes = s.as_bytes();
@@ -141,7 +115,6 @@ fn array_is_closed(s: &str) -> bool {
     }
     false
 }
-
 fn parse_value(raw: &str, lineno: usize) -> Result<TomlValue, String> {
     let raw = raw.trim();
     if let Some(rest) = raw.strip_prefix('[') {
@@ -184,7 +157,6 @@ fn parse_value(raw: &str, lineno: usize) -> Result<TomlValue, String> {
     }
     Err(format!("line {}: unrecognized value: {}", lineno, raw))
 }
-
 fn unquote(s: &str) -> String {
     // Handle \n \t \" \\ escapes
     let mut out = String::with_capacity(s.len());
@@ -208,11 +180,9 @@ fn unquote(s: &str) -> String {
     }
     out
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_basic() {
         let toml = MiniToml::parse(
@@ -231,7 +201,6 @@ default_exts = ["rs", "py"]
             vec!["node_modules", "target"]
         );
     }
-
     #[test]
     fn test_multiline_array() {
         let toml = MiniToml::parse(
@@ -259,7 +228,6 @@ default_exts = []
         );
         assert!(toml.get_str_array("default_exts").unwrap().is_empty());
     }
-
     #[test]
     fn test_multiline_array_with_inline_comments() {
         let toml = MiniToml::parse(
@@ -276,7 +244,6 @@ default_ignore_dirs = [
             vec!["node_modules", "target"]
         );
     }
-
     #[test]
     fn test_multiline_array_unclosed() {
         let err = MiniToml::parse(
@@ -288,7 +255,6 @@ default_ignore_dirs = [
         .unwrap_err();
         assert!(err.contains("missing ']'"), "unexpected error: {}", err);
     }
-
     #[test]
     fn test_string_value_with_brackets() {
         // A `]` inside a string must not terminate an array

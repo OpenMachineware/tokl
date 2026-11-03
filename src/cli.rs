@@ -1,41 +1,5 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Command-line argument parsing.
-//!
-//! Usage:
-//!   tokl [OPTIONS] <PATH...>
-//!
-//! Options:
-//!   -h                       print help
-//!   --version                print version and copyright info
-//!   -v, --verbose            verbose output (e.g. approximate tokenizer hints)
-//!   -m, --model <MODEL>      set the model (takes precedence over config)
-//!   -f, --format <FMT>       output format: json | table | markdown
-//!   -j, --jobs <N>           number of counting threads
-//!                            (default: number of CPU cores)
-//!   -i, --ignore <PATTERN>   ignore dirs/languages/extensions
-//!                            (repeatable, merged with config)
-//!   -e, --ext <EXT>          only count given extensions
-//!                            (repeatable, merged with config)
-//!   --init                   generate a default config file in the config dir
-//!                            (the config file is auto-generated on first run)
-//!   <PATH>                   paths to scan (multiple allowed, recursive)
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 #[derive(Debug, Clone, Default)]
 pub struct Options {
@@ -52,12 +16,10 @@ pub struct Options {
     pub check_update: bool,
     pub self_update: bool,
 }
-
 pub fn parse(args: &[String]) -> Result<Options, String> {
     let mut opts = Options::default();
     let mut it = args.iter().peekable();
     let mut no_more_opts = false;
-
     while let Some(arg) = it.next() {
         if no_more_opts || !arg.starts_with('-') || arg == "-" {
             opts.paths.push(arg.clone());
@@ -136,7 +98,6 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
             }
         }
     }
-
     if opts.show_help
         || opts.show_version
         || opts.init_config
@@ -152,12 +113,9 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
     }
     Ok(opts)
 }
-
 pub const USAGE: &str = r#"tokl - count code lines and tokens
-
 Usage:
     tokl [OPTIONS] <PATH...>
-
 Options:
     -h, --help               Print help
     --version                Print version and copyright info
@@ -179,7 +137,6 @@ Options:
     --self-update            Update tokl to the latest version
                              (use sudo if installed in /usr/local/bin)
     <PATH>                   Paths to scan (multiple allowed, recursive)
-
 Configuration:
     Default config file: ~/.config/tokl/user_config.toml
     (%APPDATA%\tokl\user_config.toml on Windows). It is generated
@@ -187,20 +144,17 @@ Configuration:
     common build/dependency dirs ignored). Keys: default_model /
     default_format / default_ignore_dirs / default_ignore_langs /
     default_exts / tokenizer_dir.
-
 Version control:
     When scanning inside a git/svn/hg/bzr/fossil repository, ignore rules
     from the repository's ignore file (.gitignore / .svnignore /
     .hgignore / .bzrignore / .ignore) are applied automatically and merged
     with the -i ignores. Supports *, ?, [...], ** globs and ! negation.
-
 Examples:
     tokl .
     tokl -m deepseek-v4 -f markdown src tests
     tokl -i node_modules -i target -e rs -e py .
     tokl -m qwen --verbose ~/projects/myapp
 "#;
-
 pub const VERSION_INFO: &str = concat!(
     "tokl ",
     env!("CARGO_PKG_VERSION"),
@@ -209,16 +163,13 @@ pub const VERSION_INFO: &str = concat!(
     "License: GPL-3.0\n",
     "Copyright (C) 2026 Jia Liu"
 );
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     fn parse_args(args: &[&str]) -> Result<Options, String> {
         let v: Vec<String> = args.iter().map(|s| s.to_string()).collect();
         parse(&v)
     }
-
     #[test]
     fn test_basic() {
         let o = parse_args(&["-m", "qwen", "-f", "json", ".", "-v"]).unwrap();
@@ -227,14 +178,12 @@ mod tests {
         assert_eq!(o.paths, vec!["."]);
         assert!(o.verbose);
     }
-
     #[test]
     fn test_equals_form() {
         let o = parse_args(&["--model=qwen", "-i=node_modules", "."]).unwrap();
         assert_eq!(o.model.as_deref(), Some("qwen"));
         assert_eq!(o.ignore, vec!["node_modules"]);
     }
-
     #[test]
     fn test_jobs() {
         let o = parse_args(&["-j", "8", "."]).unwrap();
@@ -244,12 +193,10 @@ mod tests {
         assert!(parse_args(&["-j", "0", "."]).is_err());
         assert!(parse_args(&["-j", "abc", "."]).is_err());
     }
-
     #[test]
     fn test_missing_path() {
         assert!(parse_args(&["-m", "qwen"]).is_err());
     }
-
     #[test]
     fn test_help() {
         assert!(parse_args(&["-h"]).unwrap().show_help);

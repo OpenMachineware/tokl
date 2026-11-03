@@ -1,36 +1,8 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Version-control integration: detect whether the scan roots live inside
-//! a git / svn / hg / bzr / fossil repository and apply the repository's
-//! ignore rules (`.gitignore` etc.) on top of the `-i` / config ignores.
-//!
-//! Matching follows the gitignore specification (a superset used by most
-//! tools): blank lines and `#` comments are skipped, `!` negates, a
-//! trailing `/` restricts to directories, patterns containing `/` are
-//! anchored to the ignore file's directory, and `*` / `?` / `[...]` /
-//! `**` globs are supported. Mercurial's `.hgignore` defaults to regular
-//! expressions, which are not implemented; only its `syntax: glob` rules
-//! are honored.
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 use std::ffi::OsString;
 use std::path::{Component, Path, PathBuf};
-
 /// Version-control systems we can detect.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VcsKind {
@@ -40,10 +12,8 @@ pub enum VcsKind {
     Bzr,
     Fossil,
 }
-
 const ALL_KINDS: [VcsKind; 5] =
     [VcsKind::Git, VcsKind::Hg, VcsKind::Svn, VcsKind::Bzr, VcsKind::Fossil];
-
 impl VcsKind {
     pub fn name(self) -> &'static str {
         match self {
@@ -54,7 +24,6 @@ impl VcsKind {
             VcsKind::Fossil => "fossil",
         }
     }
-
     /// Entries that identify a repository root (a `.git` entry may be a
     /// file for worktrees/submodules, hence `exists` rather than `is_dir`).
     fn markers(self) -> &'static [&'static str] {
@@ -66,7 +35,6 @@ impl VcsKind {
             VcsKind::Fossil => &[".fslckout", ".fossil-settings"],
         }
     }
-
     /// Ignore files to read from the repository root.
     fn ignore_files(self) -> &'static [&'static str] {
         match self {
@@ -78,7 +46,6 @@ impl VcsKind {
         }
     }
 }
-
 /// One compiled ignore pattern (a single line of an ignore file).
 #[derive(Debug, Clone)]
 struct IgnorePattern {
@@ -87,7 +54,6 @@ struct IgnorePattern {
     anchored: bool,
     segs: Vec<String>,
 }
-
 impl IgnorePattern {
     fn parse(line: &str) -> Option<IgnorePattern> {
         let text = unescape(line);
@@ -114,7 +80,6 @@ impl IgnorePattern {
         let segs: Vec<String> = pat.split('/').map(|s| s.to_string()).collect();
         Some(IgnorePattern { negated, dir_only, anchored, segs })
     }
-
     /// Whether this pattern matches `rel` (path relative to the ignore
     /// file's directory), which is a directory when `is_dir`.
     fn matches(&self, rel: &[&str], is_dir: bool) -> bool {
@@ -131,7 +96,6 @@ impl IgnorePattern {
             }
         }
     }
-
     /// Whether the pattern matches the path itself or any of its ancestor
     /// directories (ignoring a directory ignores its contents).
     fn matches_path_or_ancestor(&self, rel: &[&str], is_dir: bool) -> bool {
@@ -145,7 +109,6 @@ impl IgnorePattern {
         false
     }
 }
-
 /// Ignore rules loaded from one ignore file.
 #[derive(Debug, Clone)]
 struct IgnoreFile {
@@ -153,7 +116,6 @@ struct IgnoreFile {
     base: Vec<OsString>,
     patterns: Vec<IgnorePattern>,
 }
-
 /// Version-control context discovered for the scan roots.
 #[derive(Debug, Clone, Default)]
 pub struct VcsContext {
@@ -169,7 +131,6 @@ pub struct VcsContext {
     pub rule_count: usize,
     files: Vec<IgnoreFile>,
 }
-
 impl VcsContext {
     /// Detect repositories containing any of `scan_roots` and load their
     /// ignore files. Returns an empty context when nothing is found.
@@ -195,7 +156,6 @@ impl VcsContext {
                 }
             }
         }
-
         let mut kinds = Vec::new();
         let mut files = Vec::new();
         let mut rule_count = 0;
@@ -221,7 +181,6 @@ impl VcsContext {
             files.iter().any(|f| f.patterns.iter().any(|p| p.negated));
         VcsContext { repos, kinds, has_negations, rule_count, files }
     }
-
     /// Whether `path` (a file or directory) is ignored by the loaded rules.
     pub fn should_skip(&self, path: &Path, is_dir: bool) -> bool {
         if self.files.is_empty() {
@@ -258,7 +217,6 @@ impl VcsContext {
         false
     }
 }
-
 /// Make `p` absolute (relative paths resolve against the current dir).
 fn abs_path(p: &str) -> PathBuf {
     let path = Path::new(p);
@@ -270,7 +228,6 @@ fn abs_path(p: &str) -> PathBuf {
             .join(path)
     }
 }
-
 /// Split a path into normalized components, resolving `.` and `..` so that
 /// paths built from different relative roots compare consistently.
 fn normalize(path: &Path) -> Vec<OsString> {
@@ -299,12 +256,10 @@ fn normalize(path: &Path) -> Vec<OsString> {
     }
     stack
 }
-
 fn is_root_comp(s: &std::ffi::OsStr) -> bool {
     let s = s.to_string_lossy();
     s == "/" || (s.ends_with(':') && s.len() <= 3)
 }
-
 /// Reverse `\X` escapes and drop unescaped trailing whitespace.
 fn unescape(line: &str) -> String {
     let b = line.as_bytes();
@@ -334,7 +289,6 @@ fn unescape(line: &str) -> String {
     }
     out
 }
-
 /// Parse an ignore file into patterns. `.hgignore` only honors `syntax:
 /// glob` rules (its default regexp syntax is not implemented).
 fn parse_ignore_file(kind: VcsKind, text: &str) -> Vec<IgnorePattern> {
@@ -366,7 +320,6 @@ fn parse_ignore_file(kind: VcsKind, text: &str) -> Vec<IgnorePattern> {
     }
     patterns
 }
-
 /// Glob match against a single path segment (no `/` crossing): `*` matches
 /// any run of characters, `?` a single one, `[...]` a character class.
 fn glob_match(pat: &str, text: &str) -> bool {
@@ -408,7 +361,6 @@ fn glob_match(pat: &str, text: &str) -> bool {
     }
     prev[t.len()]
 }
-
 /// Segment-wise match of an anchored pattern against a relative path,
 /// supporting `**` as "any number of segments".
 fn path_match(segs: &[String], rel: &[&str]) -> bool {
@@ -431,7 +383,6 @@ fn path_match(segs: &[String], rel: &[&str]) -> bool {
     }
     dp[n][m]
 }
-
 #[derive(Debug, Clone)]
 enum Unit {
     Lit(u8),
@@ -439,7 +390,6 @@ enum Unit {
     Star,
     Class { neg: bool, ranges: Vec<(u8, u8)> },
 }
-
 fn parse_units(pat: &str) -> Vec<Unit> {
     let b = pat.as_bytes();
     let mut units: Vec<Unit> = Vec::new();
@@ -492,11 +442,9 @@ fn parse_units(pat: &str) -> Vec<Unit> {
     }
     units
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_glob_basic() {
         assert!(glob_match("*.rs", "main.rs"));
@@ -509,7 +457,6 @@ mod tests {
         assert!(glob_match("file.*", "file.tar.gz"));
         assert!(!glob_match("*.log", "a/b.log"));
     }
-
     #[test]
     fn test_path_match_doublestar() {
         let mk =
@@ -524,7 +471,6 @@ mod tests {
         assert!(!path_match(&mk(&["a", "b"]), &["a", "b", "c"]));
         assert!(path_match(&mk(&["a", "b"]), &["a", "b"]));
     }
-
     #[test]
     fn test_parse_line() {
         let p = IgnorePattern::parse("node_modules").unwrap();
@@ -540,7 +486,6 @@ mod tests {
         assert!(IgnorePattern::parse("# comment").is_none());
         assert!(IgnorePattern::parse("").is_none());
     }
-
     #[test]
     fn test_matches_anchored() {
         let p = IgnorePattern::parse("src/generated").unwrap();
@@ -555,7 +500,6 @@ mod tests {
         assert!(p.matches(&["a", "src"], true));
         assert!(!p.matches(&["a", "src"], false));
     }
-
     #[test]
     fn test_detect_and_ignore() {
         let dir = std::env::temp_dir().join(format!(
@@ -588,7 +532,6 @@ mod tests {
         assert!(!ctx.should_skip(&dir.join("src"), false));
         std::fs::remove_dir_all(&dir).unwrap();
     }
-
     #[test]
     fn test_negation_reinclude() {
         let dir = std::env::temp_dir().join(format!(
@@ -617,7 +560,6 @@ mod tests {
         ));
         std::fs::remove_dir_all(&dir).unwrap();
     }
-
     #[test]
     fn test_no_repo_detected() {
         let dir = std::env::temp_dir().join(format!(

@@ -1,29 +1,5 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Minimal protobuf wire parser - only used to read SentencePiece's
-//! tokenizer.model.
-//!
-//! ModelProto structure (relevant parts):
-//!   repeated SentencePiece pieces = 1;
-//!   SentencePiece { string piece = 1; float score = 2;
-//!     enum Type { NORMAL=1; UNKNOWN=2; CONTROL=3; USER_DEFINED=4;
-//!                 UNUSED=5; BYTE=6; } type = 3; }
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 /// A single SentencePiece.
 #[derive(Debug, Clone)]
@@ -32,11 +8,9 @@ pub struct SentencePiece {
     pub score: f32,
     pub typ: u32,
 }
-
 pub const SP_NORMAL: u32 = 1;
 pub const SP_UNKNOWN: u32 = 2;
 pub const SP_BYTE: u32 = 6;
-
 /// Parse ModelProto and return all pieces.
 pub fn parse_model(data: &[u8]) -> Result<Vec<SentencePiece>, String> {
     let mut pieces = Vec::new();
@@ -80,7 +54,6 @@ pub fn parse_model(data: &[u8]) -> Result<Vec<SentencePiece>, String> {
     }
     Ok(pieces)
 }
-
 fn parse_sentence_piece(data: &[u8]) -> Result<SentencePiece, String> {
     let mut piece = Vec::new();
     let mut score = 0.0f32;
@@ -132,7 +105,6 @@ fn parse_sentence_piece(data: &[u8]) -> Result<SentencePiece, String> {
     }
     Ok(SentencePiece { piece, score, typ })
 }
-
 fn read_varint(data: &[u8], mut pos: usize) -> Result<(u64, usize), String> {
     let mut result: u64 = 0;
     let mut shift = 0u32;
@@ -152,11 +124,9 @@ fn read_varint(data: &[u8], mut pos: usize) -> Result<(u64, usize), String> {
         }
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_varint() {
         let data = [0x96, 0x01];

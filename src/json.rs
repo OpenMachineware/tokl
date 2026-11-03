@@ -1,23 +1,5 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Minimal JSON parser (used to read HuggingFace tokenizer.json / vocab.json).
-//! Not a full standard implementation; valid input only.
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -28,7 +10,6 @@ pub enum Value {
     Arr(Vec<Value>),
     Obj(Vec<(String, Value)>),
 }
-
 impl Value {
     pub fn get(&self, key: &str) -> Option<&Value> {
         match self {
@@ -38,7 +19,6 @@ impl Value {
             _ => None,
         }
     }
-
     pub fn as_num(&self) -> Option<f64> {
         match self {
             Value::Num(n) => Some(*n),
@@ -46,7 +26,6 @@ impl Value {
         }
     }
 }
-
 pub fn parse(input: &str) -> Result<Value, String> {
     let mut p = Parser { bytes: input.as_bytes(), pos: 0 };
     p.skip_ws();
@@ -60,12 +39,10 @@ pub fn parse(input: &str) -> Result<Value, String> {
     }
     Ok(v)
 }
-
 struct Parser<'a> {
     bytes: &'a [u8],
     pos: usize,
 }
-
 impl<'a> Parser<'a> {
     fn skip_ws(&mut self) {
         while self.pos < self.bytes.len() {
@@ -75,11 +52,9 @@ impl<'a> Parser<'a> {
             }
         }
     }
-
     fn peek(&self) -> Option<u8> {
         self.bytes.get(self.pos).copied()
     }
-
     fn parse_value(&mut self) -> Result<Value, String> {
         self.skip_ws();
         match self.peek() {
@@ -96,7 +71,6 @@ impl<'a> Parser<'a> {
             )),
         }
     }
-
     fn parse_lit(&mut self, lit: &str, val: Value) -> Result<Value, String> {
         if self.bytes.len() < self.pos + lit.len()
             || &self.bytes[self.pos..self.pos + lit.len()] != lit.as_bytes()
@@ -109,7 +83,6 @@ impl<'a> Parser<'a> {
         self.pos += lit.len();
         Ok(val)
     }
-
     fn parse_num(&mut self) -> Result<Value, String> {
         let start = self.pos;
         while self.pos < self.bytes.len() {
@@ -124,7 +97,6 @@ impl<'a> Parser<'a> {
             .map(Value::Num)
             .map_err(|_| format!("invalid number: {}", s))
     }
-
     fn parse_string(&mut self) -> Result<String, String> {
         if self.peek() != Some(b'"') {
             return Err("expected string".into());
@@ -188,7 +160,6 @@ impl<'a> Parser<'a> {
             }
         }
     }
-
     fn parse_arr(&mut self) -> Result<Value, String> {
         self.pos += 1; // [
         let mut arr = Vec::new();
@@ -207,7 +178,6 @@ impl<'a> Parser<'a> {
             }
         }
     }
-
     fn parse_obj(&mut self) -> Result<Value, String> {
         self.pos += 1; // {
         let mut fields = Vec::new();
@@ -242,7 +212,6 @@ impl<'a> Parser<'a> {
         }
     }
 }
-
 fn utf8_len(b: u8) -> usize {
     if b < 0x80 {
         1
@@ -256,11 +225,9 @@ fn utf8_len(b: u8) -> usize {
         1
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_parse_basic() {
         let v = parse(r#"{"a": [1, 2.5, "x", true, null], "b": {"c": "d"}}"#)
@@ -280,7 +247,6 @@ mod tests {
             &Value::Str("d".to_string())
         );
     }
-
     #[test]
     fn test_unicode_escape() {
         let v = parse(r#""\u0068\u0065\u006c\u006c\u006f""#).unwrap();

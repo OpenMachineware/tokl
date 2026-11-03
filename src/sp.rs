@@ -1,36 +1,10 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! SentencePiece engine (Gemini/Gemma, Grok, Kimi, Mistral, Llama 2,
-//! Hunyuan, ...).
-//!
-//! Encoding flow (approximating sentencepiece's Encode):
-//! 1. Replace spaces (0x20) with ▁ (U+2581)
-//! 2. Split words on other whitespace
-//! 3. Viterbi max-score path per word (piece match + byte fallback)
-
-use std::collections::HashMap;
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 use crate::proto::{SP_BYTE, SP_NORMAL, SP_UNKNOWN};
 use crate::util::FastBuildHasher;
-
+use std::collections::HashMap;
 const U2581: &[u8] = &[0xEF, 0x96, 0x81]; // UTF-8 encoding of ▁
-
 pub struct SpTokenizer {
     /// piece bytes -> score
     lookup: HashMap<Vec<u8>, f32, FastBuildHasher>,
@@ -39,7 +13,6 @@ pub struct SpTokenizer {
     unk_score: Option<f32>,
     max_len: usize,
 }
-
 impl SpTokenizer {
     /// Build from the raw bytes of a tokenizer.model.
     pub fn from_model_bytes(data: &[u8]) -> Option<SpTokenizer> {
@@ -70,13 +43,11 @@ impl SpTokenizer {
         }
         Some(SpTokenizer { lookup, byte_lookup, unk_score, max_len })
     }
-
     /// Count tokens.
     pub fn count(&self, text: &[u8]) -> u64 {
         let mut total: u64 = 0;
         let mut word: Vec<u8> = Vec::with_capacity(64);
         let mut in_word = false;
-
         for &b in text {
             if b == b' ' {
                 word.extend_from_slice(U2581);
@@ -97,7 +68,6 @@ impl SpTokenizer {
         }
         total
     }
-
     /// Viterbi max-score split of a single word.
     fn encode_word(&self, word: &[u8]) -> u64 {
         let n = word.len();
@@ -116,12 +86,10 @@ impl SpTokenizer {
             }
             return total;
         }
-
         let neg_inf = f32::NEG_INFINITY;
         let mut dp = vec![neg_inf; n + 1];
         let mut cnt = vec![0u64; n + 1];
         dp[0] = 0.0;
-
         for i in 0..n {
             if dp[i] == neg_inf {
                 continue;
@@ -155,7 +123,6 @@ impl SpTokenizer {
                 }
             }
         }
-
         if cnt[n] > 0 {
             cnt[n]
         } else {
@@ -164,11 +131,9 @@ impl SpTokenizer {
         }
     }
 }
-
 fn is_ws(b: u8) -> bool {
     matches!(b, b'\t' | b'\n' | b'\r' | 0x0b | 0x0c)
 }
-
 /// Parse a `<0xAB>`-style byte piece.
 fn parse_byte_piece(piece: &[u8]) -> Option<u8> {
     let s = std::str::from_utf8(piece).ok()?;
@@ -176,11 +141,9 @@ fn parse_byte_piece(piece: &[u8]) -> Option<u8> {
     let hex = s.strip_prefix("<0x")?.strip_suffix('>')?;
     u8::from_str_radix(hex, 16).ok()
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_byte_piece() {
         assert_eq!(parse_byte_piece(b"<0x00>"), Some(0));

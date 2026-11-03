@@ -1,23 +1,5 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! General utilities: base64 decoding, thousands separators,
-//! binary detection, etc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 /// Base64 decode (standard alphabet, ignores whitespace).
 pub fn base64_decode(s: &str) -> Option<Vec<u8>> {
@@ -27,7 +9,6 @@ pub fn base64_decode(s: &str) -> Option<Vec<u8>> {
     for (i, &b) in TABLE.iter().enumerate() {
         rev[b as usize] = i as u8;
     }
-
     let mut out = Vec::with_capacity(s.len() / 4 * 3);
     let mut acc: u32 = 0;
     let mut nbits = 0u32;
@@ -51,7 +32,6 @@ pub fn base64_decode(s: &str) -> Option<Vec<u8>> {
     }
     Some(out)
 }
-
 /// Thousands separator: 1234567 -> "1,234,567"
 pub fn thousands(n: u64) -> String {
     let s = n.to_string();
@@ -66,13 +46,11 @@ pub fn thousands(n: u64) -> String {
     }
     out
 }
-
 /// Simple binary detection: a NUL byte in the first 8KB means binary.
 pub fn looks_binary(data: &[u8]) -> bool {
     let limit = data.len().min(8192);
     data[..limit].contains(&0)
 }
-
 /// A fast, non-cryptographic hasher (FNV-1a).
 ///
 /// The default SipHash guards against hash-flooding attacks, but that is not
@@ -81,16 +59,13 @@ pub fn looks_binary(data: &[u8]) -> bool {
 /// keeps the hot counting path allocation-free.
 #[derive(Default, Clone, Copy)]
 pub struct FastBuildHasher;
-
 impl std::hash::BuildHasher for FastBuildHasher {
     type Hasher = FastHasher;
     fn build_hasher(&self) -> FastHasher {
         FastHasher(0xcbf2_9ce4_8422_2325)
     }
 }
-
 pub struct FastHasher(u64);
-
 impl std::hash::Hasher for FastHasher {
     fn finish(&self) -> u64 {
         self.0
@@ -104,7 +79,6 @@ impl std::hash::Hasher for FastHasher {
         self.0 = h;
     }
 }
-
 /// File extension (lowercase, no dot). Returns None when absent.
 pub fn extension_of(path: &std::path::Path) -> Option<String> {
     let name = path.file_name()?.to_str()?;
@@ -115,24 +89,20 @@ pub fn extension_of(path: &std::path::Path) -> Option<String> {
         _ => None,
     }
 }
-
 /// File name (without the directory).
 pub fn file_name_of(path: &std::path::Path) -> String {
     path.file_name()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_default()
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_base64() {
         assert_eq!(base64_decode("aGVsbG8=").unwrap(), b"hello");
         assert_eq!(base64_decode("aGVsbG8").unwrap(), b"hello");
     }
-
     #[test]
     fn test_thousands() {
         assert_eq!(thousands(0), "0");
@@ -140,7 +110,6 @@ mod tests {
         assert_eq!(thousands(1000), "1,000");
         assert_eq!(thousands(1234567), "1,234,567");
     }
-
     #[test]
     fn test_extension() {
         let p = std::path::Path::new("/a/b/Foo.RS");

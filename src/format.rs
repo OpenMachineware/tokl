@@ -1,36 +1,14 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Output formatting: table (scc style) / markdown / json.
-//!
-//! Column order: Language, Files, Tokens, Lines, Blanks, Comments, Code
-//! (Tokens sits between Files and Lines; no Complexity column).
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 use crate::count::LangAgg;
 use crate::util::thousands;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Format {
     Table,
     Markdown,
     Json,
 }
-
 impl Format {
     pub fn from_str(s: &str) -> Result<Format, String> {
         match s.trim().to_ascii_lowercase().as_str() {
@@ -45,10 +23,8 @@ impl Format {
         }
     }
 }
-
 const HEADERS: [&str; 7] =
     ["Language", "Files", "Tokens", "Lines", "Blanks", "Comments", "Code"];
-
 /// Render statistics. model is used for json metadata.
 pub fn render(
     rows: &[(String, LangAgg)],
@@ -62,7 +38,6 @@ pub fn render(
         Format::Json => render_json(rows, total, model),
     }
 }
-
 fn cell_values(a: &LangAgg) -> [String; 6] {
     [
         thousands(a.files),
@@ -73,7 +48,6 @@ fn cell_values(a: &LangAgg) -> [String; 6] {
         thousands(a.code),
     ]
 }
-
 fn render_table(rows: &[(String, LangAgg)], total: &LangAgg) -> String {
     let mut widths = [0usize; 7];
     for (i, h) in HEADERS.iter().enumerate() {
@@ -92,11 +66,9 @@ fn render_table(rows: &[(String, LangAgg)], total: &LangAgg) -> String {
             widths[i + 1] = widths[i + 1].max(c.len());
         }
     }
-
     // Column gap of 3 spaces
     let sep_width = widths.iter().sum::<usize>() + (widths.len() - 1) * 3;
     let sep: String = "─".repeat(sep_width);
-
     let mut out = String::new();
     // Header
     let mut line = String::new();
@@ -108,7 +80,6 @@ fn render_table(rows: &[(String, LangAgg)], total: &LangAgg) -> String {
     out.push('\n');
     out.push_str(&sep);
     out.push('\n');
-
     for (lang, a) in rows {
         let mut line = String::new();
         line.push_str(&format!("{:<w$}", lang, w = widths[0]));
@@ -119,7 +90,6 @@ fn render_table(rows: &[(String, LangAgg)], total: &LangAgg) -> String {
         out.push_str(line.trim_end());
         out.push('\n');
     }
-
     out.push_str(&sep);
     out.push('\n');
     let mut line = String::new();
@@ -132,10 +102,8 @@ fn render_table(rows: &[(String, LangAgg)], total: &LangAgg) -> String {
     out.push('\n');
     out.push_str(&sep);
     out.push('\n');
-
     out
 }
-
 fn render_markdown(rows: &[(String, LangAgg)], total: &LangAgg) -> String {
     let mut out = String::new();
     out.push('|');
@@ -173,7 +141,6 @@ fn render_markdown(rows: &[(String, LangAgg)], total: &LangAgg) -> String {
     out.push('\n');
     out
 }
-
 fn render_json(
     rows: &[(String, LangAgg)],
     total: &LangAgg,
@@ -214,7 +181,6 @@ fn render_json(
     out.push_str("}\n");
     out
 }
-
 /// Render a JSON string literal (with escaping).
 fn json_str(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 2);

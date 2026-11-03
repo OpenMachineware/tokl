@@ -1,22 +1,5 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! tokl — Token and Line Counter.
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 mod approx;
 mod bpe;
@@ -34,17 +17,14 @@ mod toml;
 mod update;
 mod util;
 mod vcs;
-
+use cli::{USAGE, VERSION_INFO};
+use count::LangAgg;
+use scanner::ScanOptions;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::{Mutex, mpsc};
 use std::thread;
-
-use cli::{USAGE, VERSION_INFO};
-use count::LangAgg;
-use scanner::ScanOptions;
-
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let opts = match cli::parse(&args) {
@@ -56,7 +36,6 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-
     if opts.show_help {
         println!("{}", USAGE);
         return ExitCode::SUCCESS;
@@ -74,7 +53,6 @@ fn main() -> ExitCode {
     if opts.self_update {
         return self_update();
     }
-
     // Load config (CLI flags take precedence)
     let cfg = config::load();
     if opts.verbose {
@@ -86,7 +64,6 @@ fn main() -> ExitCode {
             );
         }
     }
-
     // Merge defaults with CLI arguments
     let model_name = opts
         .model
@@ -103,7 +80,6 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-
     let format_name = opts
         .format
         .clone()
@@ -116,13 +92,11 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-
     // Merge -i with ignore_dirs / ignore_langs from config
     let mut ignore_dirs = cfg.default_ignore_dirs.clone();
     ignore_dirs.extend(opts.ignore.iter().cloned());
     let mut ignore_langs = cfg.default_ignore_langs.clone();
     ignore_langs.extend(opts.ignore.iter().cloned());
-
     // Merge -e with default_exts from config
     let mut exts = cfg.default_exts.clone();
     exts.extend(opts.exts.iter().cloned());
@@ -133,7 +107,6 @@ fn main() -> ExitCode {
             .filter(|e| seen.insert(e.to_ascii_lowercase()))
             .collect()
     };
-
     // Detect version control (git/svn/hg/...) and load repository ignore
     // rules (.gitignore etc.); they are merged with -i / config ignores.
     let vcs = vcs::VcsContext::detect(&opts.paths);
@@ -157,14 +130,12 @@ fn main() -> ExitCode {
             }
         }
     }
-
     let scan_opts = ScanOptions {
         ignore_dirs,
         ignore_langs,
         only_exts: exts,
         vcs: Some(vcs),
     };
-
     // Build the tokenizer
     let tokenizer_dir = cfg.tokenizer_dir.as_deref().map(Path::new);
     let (tokenizer, loaded_from) = tokenize::build(model, tokenizer_dir);
@@ -181,7 +152,6 @@ fn main() -> ExitCode {
             ),
         }
     }
-
     // Scan
     let registry = scanner::Registry::new();
     let files = scanner::scan(&opts.paths, &scan_opts, &registry);
@@ -189,13 +159,11 @@ fn main() -> ExitCode {
         eprintln!("info: no countable files found");
         return ExitCode::SUCCESS;
     }
-
     // Count files in parallel
     enum WorkResult {
         Counted(String, count::FileCount),
         SkippedBinary(PathBuf),
     }
-
     let n_threads = opts.jobs.unwrap_or_else(|| {
         let cores =
             thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
@@ -205,7 +173,6 @@ fn main() -> ExitCode {
     if opts.verbose {
         eprintln!("[verbose] counting with {} thread(s)", n_threads);
     }
-
     // Each worker accumulates results locally and ships them in batches,
     // so the channel carries O(threads) messages instead of O(files).
     const BATCH: usize = 256;
@@ -291,7 +258,6 @@ fn main() -> ExitCode {
             }
         });
     }
-
     if opts.verbose {
         eprintln!(
             "[verbose] counted {} files (skipped {} binary files)",
@@ -299,19 +265,16 @@ fn main() -> ExitCode {
             binary_skipped
         );
     }
-
     // Aggregate
     let rows = count::aggregate(file_counts);
     let mut total = LangAgg::default();
     for (_, a) in &rows {
         total.add(a);
     }
-
     // Output
     print!("{}", format::render(&rows, &total, format, model.name));
     ExitCode::SUCCESS
 }
-
 /// --init: generate a default config file.
 fn init_config() -> ExitCode {
     let Some(path) = config::config_file_path() else {
@@ -329,7 +292,6 @@ fn init_config() -> ExitCode {
     println!("generated config file: {}", path.display());
     ExitCode::SUCCESS
 }
-
 /// --check-update: check for updates
 fn check_update() -> ExitCode {
     match update::check_update() {
@@ -351,7 +313,6 @@ fn check_update() -> ExitCode {
         }
     }
 }
-
 /// --self-update: update tokl
 fn self_update() -> ExitCode {
     match update::self_update() {

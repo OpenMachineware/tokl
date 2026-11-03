@@ -1,56 +1,15 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Token counting: model -> tokenizer engine adapter layer.
-//!
-//! Supported models and their tokenizer types (research findings, 2026-08):
-//! - chatgpt  : Byte-level BPE (tiktoken, o200k/cl100k), vocab from
-//!              tiktoken cache or local files; GPT-5.2/5.4/5.5/5.6 (2026)
-//! - claude   : proprietary BPE (not open source), approximate by default;
-//!              Claude 4.8 and Claude 5 (Fable/Mythos/Opus 5, 2026)
-//! - gemini   : SentencePiece (based on Gemma vocab); Gemini 3 / 3.5 (2026)
-//! - grok     : SentencePiece (Grok-1 ships open tokenizer.model);
-//!              Grok 4 / 4.1 / 4.3 / 4.6 (2026)
-//! - deepseek : Byte-level BPE (128K vocab, tokenizer.json is public);
-//!              DeepSeek V4 (2026-04, Pro/Flash), the default model
-//! - glm      : BPE (GLM tokenizer.json is public); GLM-5 / 5.1 / 5.2 (2026)
-//! - kimi     : SentencePiece (Kimi K2 ships open kimi-spm); Kimi K3 (2026-07)
-//! - qwen     : Byte-level BPE (qwen.tiktoken); Qwen3.5 (2026)
-//! - seed     : ByteDance proprietary (approximate); Doubao Seed 2.0 (2026-02)
-//! - yuanbao  : SentencePiece (Hunyuan); Hunyuan TurboS/T1, Hy3 (2026-07)
-//! - llama    : BPE (Llama 3/4 uses tiktoken style); `llama2` is SentencePiece
-//! - mistral  : SentencePiece (byte fallback); Mistral 3 series (2026)
-//!
-//! Use the exact engine when a local vocab is available; otherwise fall
-//! back to the approximate engine (-v prints a hint).
-
-use std::path::{Path, PathBuf};
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 use crate::approx::{ApproxParams, count_approx};
 use crate::bpe::BpeTokenizer;
 use crate::sp::SpTokenizer;
-
+use std::path::{Path, PathBuf};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EngineKind {
     Bpe,
     SentencePiece,
 }
-
 /// Model information.
 pub struct ModelInfo {
     pub name: &'static str,
@@ -59,7 +18,6 @@ pub struct ModelInfo {
     /// Candidate vocab file names searched in tokenizer_dir, in order
     pub vocab_files: &'static [&'static str],
 }
-
 pub const MODELS: &[ModelInfo] = &[
     ModelInfo {
         name: "chatgpt",
@@ -289,20 +247,17 @@ pub const MODELS: &[ModelInfo] = &[
         vocab_files: &["mistral.tokenizer.model", "tokenizer.model"],
     },
 ];
-
 /// Resolve a model by name or alias.
 pub fn resolve_model(name: &str) -> Option<&'static ModelInfo> {
     let name = name.to_ascii_lowercase();
     MODELS.iter().find(|m| m.name == name || m.aliases.contains(&name.as_str()))
 }
-
 /// Tokenizer (engine enum).
 pub enum Tokenizer {
     Bpe(BpeTokenizer),
     Sp(SpTokenizer),
     Approx(ApproxParams),
 }
-
 impl Tokenizer {
     pub fn count(&self, text: &[u8]) -> u64 {
         match self {
@@ -312,7 +267,6 @@ impl Tokenizer {
         }
     }
 }
-
 /// Build a tokenizer. Returns (tokenizer, load source description).
 pub fn build(
     model: &ModelInfo,
@@ -352,7 +306,6 @@ pub fn build(
             }
         }
     }
-
     // 2) chatgpt: auto-discover the tiktoken cache
     if model.name == "chatgpt" {
         for f in ["o200k_base.tiktoken", "cl100k_base.tiktoken"] {
@@ -368,11 +321,9 @@ pub fn build(
             }
         }
     }
-
     // 3) Approximate
     (Tokenizer::Approx(ApproxParams::default()), None)
 }
-
 /// Load a vocab file by extension.
 fn load_file(path: &Path, engine: EngineKind) -> Option<Tokenizer> {
     match path.extension().and_then(|e| e.to_str()) {
@@ -393,7 +344,6 @@ fn load_file(path: &Path, engine: EngineKind) -> Option<Tokenizer> {
         _ => None,
     }
 }
-
 /// File path inside the tiktoken cache directory.
 fn tiktoken_cache_path(name: &str) -> Option<PathBuf> {
     let dirs = std::env::vars()
@@ -405,11 +355,9 @@ fn tiktoken_cache_path(name: &str) -> Option<PathBuf> {
     paths.push(PathBuf::from("/tmp/data-gym-cache").join(name));
     paths.into_iter().find(|p| p.is_file())
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_resolve() {
         assert!(resolve_model("qwen").is_some());

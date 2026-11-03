@@ -1,38 +1,14 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Byte-level BPE engine (tiktoken / GPT family, Qwen, DeepSeek, GLM, ...).
-//!
-//! After loading the vocab, run rank-based greedy BPE merging over the whole
-//! UTF-8 byte stream (matching tiktoken's byte_pair_merge, O(n log n) with a
-//! priority queue).
-
-use std::collections::{BinaryHeap, HashMap};
-use std::path::Path;
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 use crate::json::Value;
 use crate::util::{FastBuildHasher, base64_decode};
-
+use std::collections::{BinaryHeap, HashMap};
+use std::path::Path;
 pub struct BpeTokenizer {
     /// token bytes -> rank (lower merges first; 0-255 are single bytes)
     ranks: HashMap<Vec<u8>, u32, FastBuildHasher>,
 }
-
 impl BpeTokenizer {
     /// Load from a .tiktoken file (each line: base64 token + rank).
     pub fn from_tiktoken_file(path: &Path) -> Option<BpeTokenizer> {
@@ -55,7 +31,6 @@ impl BpeTokenizer {
         }
         Some(BpeTokenizer { ranks })
     }
-
     /// Load from a HuggingFace tokenizer.json (model.vocab + model.merges).
     pub fn from_tokenizer_json(path: &Path) -> Option<BpeTokenizer> {
         let text = std::fs::read_to_string(path).ok()?;
@@ -64,7 +39,6 @@ impl BpeTokenizer {
         let vocab = model.get("vocab")?;
         Self::from_vocab(vocab)
     }
-
     /// Build from the model.vocab object of a tokenizer.json.
     fn from_vocab(vocab: &Value) -> Option<BpeTokenizer> {
         let Value::Obj(fields) = vocab else {
@@ -81,7 +55,6 @@ impl BpeTokenizer {
         }
         Some(BpeTokenizer { ranks })
     }
-
     /// Count tokens (run BPE merging over the whole byte stream).
     pub fn count(&self, data: &[u8]) -> u64 {
         let n = data.len();
@@ -91,7 +64,6 @@ impl BpeTokenizer {
         if n == 1 {
             return 1;
         }
-
         // parts[i] = [start, end), byte range
         let mut parts: Vec<[usize; 2]> = (0..n).map(|i| [i, i + 1]).collect();
         // Linked list (by original index)
@@ -100,7 +72,6 @@ impl BpeTokenizer {
         let mut prev: Vec<Option<usize>> =
             (0..n).map(|i| if i == 0 { None } else { Some(i - 1) }).collect();
         let mut versions: Vec<u32> = vec![0; n];
-
         // min-heap: (rank, left part index, version)
         let mut heap: BinaryHeap<std::cmp::Reverse<(u32, usize, u32)>> =
             BinaryHeap::new();
@@ -109,7 +80,6 @@ impl BpeTokenizer {
                 heap.push(std::cmp::Reverse((r, i, 0)));
             }
         }
-
         let mut merged: u64 = 0;
         while let Some(std::cmp::Reverse((rank, i, ver))) = heap.pop() {
             if ver != versions[i] {
@@ -130,7 +100,6 @@ impl BpeTokenizer {
                 prev[nj] = Some(i);
             }
             merged += 1;
-
             // Left neighbor (prev[i], i)
             if let Some(k) = prev[i] {
                 let b = parts[k][0];
@@ -149,21 +118,17 @@ impl BpeTokenizer {
                 }
             }
         }
-
         (n as u64) - merged
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_empty() {
         let t = BpeTokenizer { ranks: HashMap::default() };
         assert_eq!(t.count(b""), 0);
     }
-
     #[test]
     fn test_simple_vocab() {
         // Tiny vocab: single bytes + "ab" + "cd"

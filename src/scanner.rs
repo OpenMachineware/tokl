@@ -1,32 +1,12 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! File scanning: recursively walk directories, filter by language table /
-//! extension, and return the list of files to count.
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
+use crate::language::{LANGUAGES, LangSpec};
+use crate::util::{extension_of, file_name_of};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::thread;
-
-use crate::language::{LANGUAGES, LangSpec};
-use crate::util::{extension_of, file_name_of};
-
 /// Scan options.
 #[derive(Debug, Clone, Default)]
 pub struct ScanOptions {
@@ -39,7 +19,6 @@ pub struct ScanOptions {
     /// Version-control ignore context (.gitignore etc.), when inside a repo.
     pub vcs: Option<crate::vcs::VcsContext>,
 }
-
 /// A file to be counted.
 #[derive(Debug, Clone)]
 pub struct ScannedFile {
@@ -49,7 +28,6 @@ pub struct ScannedFile {
     /// Language syntax (generic syntax for unknown languages)
     pub syntax: LangSpec,
 }
-
 /// Language registry: extension / filename -> language index.
 pub struct Registry {
     /// Extension -> language index (first match wins, highest priority)
@@ -57,7 +35,6 @@ pub struct Registry {
     /// Exact filename -> language index
     filename_map: HashMap<String, usize>,
 }
-
 /// Generic syntax for unknown languages: no comments, plain strings only.
 pub const GENERIC_SYNTAX: LangSpec = LangSpec {
     name: "Other",
@@ -84,7 +61,6 @@ pub const GENERIC_SYNTAX: LangSpec = LangSpec {
     ],
     raw: crate::language::RawKind::None,
 };
-
 impl Registry {
     pub fn new() -> Registry {
         let mut ext_map = HashMap::new();
@@ -99,7 +75,6 @@ impl Registry {
         }
         Registry { ext_map, filename_map }
     }
-
     /// Match a language index for a path (filename first, then extension).
     fn match_lang(&self, path: &Path) -> Option<usize> {
         let name = file_name_of(path);
@@ -114,7 +89,6 @@ impl Registry {
         }
         None
     }
-
     /// Whether a language matches ignore_langs (by name/alias or extension).
     fn lang_ignored(
         &self,
@@ -151,7 +125,6 @@ impl Registry {
         false
     }
 }
-
 /// Recursively scan and return a sorted list of files.
 pub fn scan(
     roots: &[String],
@@ -164,13 +137,11 @@ pub fn scan(
     let only_exts: HashSet<String> =
         opts.only_exts.iter().map(|s| s.to_ascii_lowercase()).collect();
     let only = !only_exts.is_empty();
-
     let files: Mutex<Vec<ScannedFile>> = Mutex::new(Vec::new());
     // Directories still to visit: (canonical path, display path)
     let dirs: Mutex<VecDeque<(PathBuf, PathBuf)>> = Mutex::new(VecDeque::new());
     // Track visited canonical paths to prevent symlink loops
     let visited: Mutex<HashSet<PathBuf>> = Mutex::new(HashSet::new());
-
     for root in roots {
         let root = Path::new(root);
         let root_canon =
@@ -193,7 +164,6 @@ pub fn scan(
             dirs.lock().unwrap().push_back((root_canon, root.to_path_buf()));
         }
     }
-
     // Walk directories in parallel: each thread drains the shared queue.
     let n_threads =
         thread::available_parallelism().map(|n| n.get()).unwrap_or(2).max(1);
@@ -271,12 +241,10 @@ pub fn scan(
             });
         }
     });
-
     let mut files = files.into_inner().unwrap();
     files.sort_by(|a, b| a.path.cmp(&b.path));
     files
 }
-
 #[allow(clippy::too_many_arguments)]
 fn push_file(
     path: &Path,
@@ -298,7 +266,6 @@ fn push_file(
     }
     let lang_idx = registry.match_lang(path);
     let ext = extension_of(path);
-
     let ext_allowed = if only {
         // With -e: extensions must match; extensionless files
         // (e.g. Dockerfile) fall back to the language table
@@ -321,7 +288,6 @@ fn push_file(
     if registry.lang_ignored(lang_idx, ext.as_deref(), &opts.ignore_langs) {
         return;
     }
-
     let (lang_name, syntax) = match lang_idx {
         Some(i) => {
             let lang = &LANGUAGES[i];

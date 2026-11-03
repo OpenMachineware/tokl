@@ -1,37 +1,8 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Line counting: use language syntax (comment/string markers) to count
-//! total / blank / comment / code lines.
-//!
-//! Classification rules (following scc/tokei):
-//! - Lines   : total lines in the file
-//! - Blanks  : lines with no non-whitespace characters
-//! - Comments: non-blank lines entirely inside a comment (start with a
-//!             comment marker, or lie within a block comment)
-//! - Code    : all other non-blank lines (including mixed
-//!             "code + trailing comment" lines)
-//! - Tokens  : provided by the tokenizer module
-
-use std::collections::BTreeMap;
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 use crate::language::{LangSpec, RawKind, StringSpec};
-
+use std::collections::BTreeMap;
 /// Aggregated statistics for one language.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LangAgg {
@@ -42,7 +13,6 @@ pub struct LangAgg {
     pub code: u64,
     pub tokens: u64,
 }
-
 impl LangAgg {
     pub fn add(&mut self, o: &LangAgg) {
         self.files += o.files;
@@ -53,7 +23,6 @@ impl LangAgg {
         self.tokens += o.tokens;
     }
 }
-
 /// Statistics for a single file.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FileCount {
@@ -63,17 +32,14 @@ pub struct FileCount {
     pub code: u64,
     pub tokens: u64,
 }
-
 /// Count lines of file byte content; tokens is supplied by the caller.
 pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
     let mut fc = FileCount { tokens, ..Default::default() };
-
     // Cross-line state
     let mut block_depth: u32 = 0;
     let mut in_string: Option<usize> = None; // string spec index
     let mut raw_end: Option<Vec<u8>> = None; // C++ raw end sequence
     let mut raw_hashes: usize = 0; // number of # in Rust raw
-
     // A trailing \n makes split yield an empty segment; ignore it
     let mut segments = data.split(|&b| b == b'\n').peekable();
     while let Some(line) = segments.next() {
@@ -81,7 +47,6 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
             continue;
         }
         fc.lines += 1;
-
         // A line that is entirely blank still belongs to an open
         // cross-line string / raw string / block comment:
         //   - inside a string or raw string  -> counts as code
@@ -91,7 +56,6 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
         let mut seen_comment = block_depth > 0;
         let mut has_nonblank = seen_code || seen_comment;
         let mut pos = 0usize;
-
         while pos < line.len() {
             // 1) String content
             if let Some(spec_idx) = in_string {
@@ -174,7 +138,6 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
             }
             // 5) Normal state
             let b = line[pos];
-
             // 5a) raw string start
             if let Some(start_len) = raw_start_len(syntax, line, pos) {
                 match syntax.raw {
@@ -231,7 +194,6 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
                     }
                 }
             }
-
             // 5b) string start (longest delimiter first)
             let mut best: Option<(usize, &StringSpec)> = None;
             for (i, spec) in syntax.strings.iter().enumerate() {
@@ -261,7 +223,6 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
                 }
                 continue;
             }
-
             // 5c) block comment start
             let mut matched = false;
             for (start, _) in syntax.block_comments {
@@ -277,7 +238,6 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
             if matched {
                 continue;
             }
-
             // 5d) line comment start
             let mut matched = false;
             for &mark in syntax.line_comments {
@@ -291,7 +251,6 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
             if matched {
                 break;
             }
-
             // 5e) comment markers valid at line start (nothing before)
             if !seen_code && !has_nonblank && !seen_comment {
                 for &mark in syntax.line_comments_bol {
@@ -306,7 +265,6 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
                     break;
                 }
             }
-
             // 5f) ordinary character
             if !b.is_ascii_whitespace() {
                 seen_code = true;
@@ -314,14 +272,12 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
             }
             pos += 1;
         }
-
         // End of line: force-close a single-line string still open
         if let Some(i) = in_string {
             if !syntax.strings[i].multiline {
                 in_string = None;
             }
         }
-
         if !has_nonblank {
             fc.blanks += 1;
         } else if seen_code {
@@ -330,10 +286,8 @@ pub fn count_file(data: &[u8], syntax: &LangSpec, tokens: u64) -> FileCount {
             fc.comments += 1;
         }
     }
-
     fc
 }
-
 /// Compute raw string start length (Rust: r#", C++: R").
 fn raw_start_len(syntax: &LangSpec, line: &[u8], pos: usize) -> Option<usize> {
     match syntax.raw {
@@ -362,7 +316,6 @@ fn raw_start_len(syntax: &LangSpec, line: &[u8], pos: usize) -> Option<usize> {
         RawKind::None => None,
     }
 }
-
 /// Aggregate per-file counts, sorted by code lines descending
 /// (largest first), then by file count descending, then by language name.
 pub fn aggregate(
@@ -387,19 +340,16 @@ pub fn aggregate(
     });
     rows
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::language::LANGUAGES;
-
     fn find_lang(name: &str) -> LangSpec {
         *LANGUAGES
             .iter()
             .find(|l| l.name == name || l.aliases.contains(&name))
             .expect("lang not found")
     }
-
     #[test]
     fn test_c_code() {
         let code = b"/* header */\nint main() {\n    // comment\n\
@@ -421,7 +371,6 @@ mod tests {
         assert_eq!(fc2.comments, 2);
         assert_eq!(fc2.code, 3);
     }
-
     #[test]
     fn test_multiline_block() {
         let code = b"/* line1\nline2 */\nint x;\n";
@@ -430,7 +379,6 @@ mod tests {
         assert_eq!(fc.code, 1);
         assert_eq!(fc.lines, 3);
     }
-
     #[test]
     fn test_string_not_comment() {
         let code = b"const char* s = \"// not comment\";\nint y;\n";
@@ -438,7 +386,6 @@ mod tests {
         assert_eq!(fc.comments, 0);
         assert_eq!(fc.code, 2);
     }
-
     #[test]
     fn test_python() {
         let code = b"# comment\ns = '''multi\nline'''\n";
@@ -447,7 +394,6 @@ mod tests {
         assert_eq!(fc.code, 2);
         assert_eq!(fc.lines, 3);
     }
-
     #[test]
     fn test_rust_raw() {
         let code = b"let s = r#\"\n// not a comment\nraw\"#;\n";
@@ -455,7 +401,6 @@ mod tests {
         assert_eq!(fc.comments, 0);
         assert_eq!(fc.code, 3);
     }
-
     #[test]
     fn test_cpp_raw() {
         let code = b"auto s = R\"(\n// not comment\n)\";\n";
@@ -463,7 +408,6 @@ mod tests {
         assert_eq!(fc.comments, 0);
         assert_eq!(fc.code, 3);
     }
-
     #[test]
     fn test_blank_line_inside_strings() {
         // Rust raw string: blank lines inside count as code, not blank
@@ -481,7 +425,6 @@ mod tests {
         assert_eq!(fc.comments, 0);
         assert_eq!(fc.code, 4);
     }
-
     #[test]
     fn test_blank_line_inside_block_comment() {
         // Blank lines inside a block comment count as comments
@@ -492,7 +435,6 @@ mod tests {
         assert_eq!(fc.comments, 3);
         assert_eq!(fc.code, 0);
     }
-
     #[test]
     fn test_nested_swift() {
         let code = b"/* outer /* inner */ still */\nlet x = 1\n";

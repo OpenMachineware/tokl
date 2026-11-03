@@ -1,29 +1,9 @@
-// tokl -- Token and Line Counter
-//
-// This file is part of the tokl project (tokl — Token and Line Counter).
-// Copyright (C) 2026 Jia Liu
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-//! Config loading: read ~/.config/tokl/user_config.toml (Linux/macOS)
-//! or %APPDATA%\tokl\user_config.toml (Windows).
-
-use std::env;
-use std::path::{Path, PathBuf};
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Jia Liu
 
 use crate::toml::MiniToml;
-
+use std::env;
+use std::path::{Path, PathBuf};
 #[derive(Debug, Clone, Default)]
 pub struct Config {
     pub default_model: Option<String>,
@@ -34,7 +14,6 @@ pub struct Config {
     /// Optional: directory holding tokenizer vocab files (exact token counting)
     pub tokenizer_dir: Option<String>,
 }
-
 /// Resolve the config file path, whether or not the file exists yet.
 ///
 /// Priority: `TOKL_CONFIG` environment variable, then the platform config
@@ -48,12 +27,10 @@ pub fn config_file_path() -> Option<PathBuf> {
     }
     config_dir().map(|d| d.join("user_config.toml"))
 }
-
 /// Return the config file path, if it exists.
 pub fn config_path() -> Option<PathBuf> {
     config_file_path().filter(|p| p.is_file())
 }
-
 /// The directory holding the config file (may not exist).
 pub fn config_dir() -> Option<PathBuf> {
     #[cfg(windows)]
@@ -75,7 +52,6 @@ pub fn config_dir() -> Option<PathBuf> {
     }
     None
 }
-
 /// Write the default config template to `path`, creating parent directories.
 pub fn write_default_config(path: &Path) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
@@ -85,7 +61,6 @@ pub fn write_default_config(path: &Path) -> std::io::Result<()> {
     }
     std::fs::write(path, DEFAULT_CONFIG_TEMPLATE)
 }
-
 /// First-run bootstrap: create the default config file when missing.
 ///
 /// Best effort only - a failure is reported as a warning and never aborts
@@ -108,7 +83,6 @@ pub fn ensure_default_config() -> Option<PathBuf> {
         }
     }
 }
-
 /// Load config; return the default (empty) config if the file is missing.
 ///
 /// On first run (no config file yet) a default config file is generated
@@ -156,11 +130,9 @@ pub fn load() -> Config {
     }
     cfg
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_template_parses() {
         let toml = MiniToml::parse(DEFAULT_CONFIG_TEMPLATE).unwrap();
@@ -173,7 +145,6 @@ mod tests {
         assert!(langs.contains(&"svg".to_string()));
         assert!(toml.get_str_array("default_exts").unwrap().is_empty());
     }
-
     #[test]
     fn test_config_file_path_prefers_env() {
         // TOKL_CONFIG wins even if the file does not exist yet
@@ -185,20 +156,16 @@ mod tests {
         unsafe { std::env::remove_var("TOKL_CONFIG") };
     }
 }
-
 /// Default config file contents (written on first run and by --init).
 pub const DEFAULT_CONFIG_TEMPLATE: &str = r#"# tokl user configuration
 #
 # This file is generated automatically on first run. You can edit it and
 # the changes will take effect the next time tokl starts.
-
 # Default LLM used for token counting (the -m flag takes precedence).
 # A domestic LLM is the default: DeepSeek V4 (Byte-level BPE, 128K vocab).
 default_model = "deepseek-v4"
-
 # Default output format (maps to -f; supports table, json, markdown)
 default_format = "table"
-
 # Default directories to ignore (maps to -i; matched by exact directory
 # name, case-insensitively). Covers common dependency/build/cache dirs:
 #   JS/TS: node_modules, dist, .next, .nuxt, vendor
@@ -239,7 +206,6 @@ default_ignore_dirs = [
     ".nox",
     ".dart_tool",
 ]
-
 # Default languages to ignore (maps to -i; filtered by extension or
 # language name): svg images, lockfiles and source maps are rarely of
 # interest when counting code.
@@ -248,12 +214,10 @@ default_ignore_langs = [
     "lock",
     "map",
 ]
-
 # Default extensions to count only (maps to -e).
 # Empty counts all file types; set it, e.g. ["rs", "py", "js"], if you
 # usually want to restrict counting to specific languages.
 default_exts = []
-
 # Optional: tokenizer vocab directory. Put each model's vocab files here
 # (tokenizer.json / tokenizer.model / *.tiktoken) to get exact token counts;
 # the built-in approximate algorithm is used when unset or not found.
