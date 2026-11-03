@@ -76,7 +76,7 @@ be verified.*
 ## Build from source
 
 ```bash
-mojo build src/main.mojo -o tokl
+cargo build --release
 ```
 
 ## Usage

@@ -67,7 +67,7 @@ Authenticode 证书——两者都需要付费的开发者账号）。因此 mac
 ## 从源码构建
 
 ```bash
-mojo build src/main.mojo -o tokl
+cargo build --release
 ```
 
 ## 用法
