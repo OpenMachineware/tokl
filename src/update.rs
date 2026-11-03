@@ -3,20 +3,23 @@
 
 use shipup::{UpdateEvent, UpdaterBuilder};
 use std::io::Write;
+
 const MANIFEST_BASE_URL: &str = "https://openmachineware.github.io/tokl/latest";
 const PUBLIC_KEY: &str = "Zlg3wdewbxUmc9AoAjl/ZKCJ7vexCT1Bsu1LGLpRQH8=";
+
 pub fn current_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
+
 fn manifest_url() -> String {
     let target = shipup::current_target_triple();
     match target {
         "x86_64-unknown-linux-gnu" => {
-            format!("{}/linux.json", MANIFEST_BASE_URL)
+            format!("{}-linux.json", MANIFEST_BASE_URL)
         }
-        "aarch64-apple-darwin" => format!("{}/macos.json", MANIFEST_BASE_URL),
+        "aarch64-apple-darwin" => format!("{}-macos.json", MANIFEST_BASE_URL),
         "x86_64-pc-windows-msvc" => {
-            format!("{}/windows.json", MANIFEST_BASE_URL)
+            format!("{}-windows.json", MANIFEST_BASE_URL)
         }
         _ => format!("{}-{}.json", MANIFEST_BASE_URL, target),
     }
